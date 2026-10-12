@@ -54,6 +54,10 @@ export class InMemoryRateLimiter implements RateLimiter {
   async reset(key: string): Promise<void> {
     this.store.delete(key);
   }
+
+  async clearAll(): Promise<void> {
+    this.store.clear();
+  }
 }
 
 // Global default limiter instance

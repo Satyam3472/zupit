@@ -12,6 +12,7 @@ import ordersRouter from './routes/orders.js';
 import trackRouter from './routes/track.js';
 import adminRouter from './routes/admin.js';
 import { protectAdminPages, protectRiderPages } from './middleware/auth.js';
+import { defaultRateLimiter, InMemoryRateLimiter } from './utils/rateLimit.js';
 
 export function createApp() {
   const app = express();
@@ -55,6 +56,12 @@ export function createApp() {
   const rootDir = process.cwd();
 
   // 1. Specific Login Pages (Unprotected)
+  if (process.env.NODE_ENV !== 'production') {
+    app.post('/api/v1/test/reset-rate-limits', async (_req: Request, res: Response) => {
+      await (defaultRateLimiter as InMemoryRateLimiter).clearAll();
+      res.status(200).json({ success: true, message: 'Rate limits cleared for testing.' });
+    });
+  }
   app.get('/admin/login', (_req: Request, res: Response) => {
     res.sendFile(path.join(publicDir, 'admin-login.html'));
   });

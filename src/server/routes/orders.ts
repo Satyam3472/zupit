@@ -141,6 +141,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
 
     res.status(201).json({
       success: true,
+      orderId: result.orderId,
       orderNumber: result.orderNumber,
       trackingToken: result.trackingToken,
       message: 'Order placed successfully. A Zupit rider will call you shortly to confirm.',
