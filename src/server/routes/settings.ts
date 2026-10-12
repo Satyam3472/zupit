@@ -56,7 +56,7 @@ router.get('/admin/settings', requireAdminApi, async (_req: Request, res: Respon
 router.put(
   '/admin/settings',
   requireAdminApi,
-  requireRole(['owner', 'ops']),
+  requireRole(['owner']),
   async (req: Request, res: Response): Promise<void> => {
     try {
       const clientIp = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || '127.0.0.1';

@@ -10,6 +10,7 @@ import settingsRouter from './routes/settings.js';
 import uploadsRouter from './routes/uploads.js';
 import ordersRouter from './routes/orders.js';
 import trackRouter from './routes/track.js';
+import adminRouter from './routes/admin.js';
 import { protectAdminPages, protectRiderPages } from './middleware/auth.js';
 
 export function createApp() {
@@ -68,8 +69,12 @@ export function createApp() {
   // - Public config & Admin settings: /api/v1/public/config, /api/v1/admin/settings, /api/v1/admin/audit-logs
   app.use('/api/v1', settingsRouter);
 
+  // - Admin Operations: /api/v1/admin/* (Orders, Riders, Cash, Customers, Reports, Templates)
+  app.use('/api/v1/admin', adminRouter);
+
   // 5. Static Assets (style.css, app.js, index.html)
   app.use('/public', express.static(publicDir));
+  app.use(express.static(publicDir));
   app.use(express.static(rootDir));
 
   // 6. Customer App routes
