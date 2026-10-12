@@ -117,14 +117,15 @@ router.post('/request-otp', async (req: Request, res: Response): Promise<void> =
   // Dispatch OTP via active SMS provider
   await smsProvider.sendOtp(phone, rawOtp);
 
-  res.status(200).json({
-    success: true,
-    message: '6-digit OTP sent successfully. Valid for 5 minutes.',
-    status: 'otp_sent',
-    expiresInSeconds: 300,
-    resendAvailableInSeconds: 30,
+    res.status(200).json({
+      success: true,
+      message: '6-digit OTP sent successfully. Valid for 5 minutes.',
+      status: 'otp_sent',
+      expiresInSeconds: 300,
+      resendAvailableInSeconds: 30,
+      devOtp: process.env.NODE_ENV !== 'production' ? rawOtp : undefined,
+    });
   });
-});
 
 /**
  * POST /api/v1/rider/auth/verify-otp

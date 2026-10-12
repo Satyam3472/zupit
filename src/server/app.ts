@@ -5,6 +5,7 @@ import path from 'path';
 
 import authAdminRouter from './routes/authAdmin.js';
 import authRiderRouter from './routes/authRider.js';
+import riderRouter from './routes/rider.js';
 import settingsRouter from './routes/settings.js';
 import uploadsRouter from './routes/uploads.js';
 import ordersRouter from './routes/orders.js';
@@ -37,11 +38,11 @@ export function createApp() {
   app.use('/rider', protectRiderPages);
 
   // 3. Protected Dashboard Pages
-  app.get(['/admin', '/admin/dashboard'], (_req: Request, res: Response) => {
+  app.get(/^\/admin(\/.*)?$/, (_req: Request, res: Response) => {
     res.sendFile(path.join(publicDir, 'admin-dashboard.html'));
   });
 
-  app.get(['/rider', '/rider/dashboard'], (_req: Request, res: Response) => {
+  app.get(/^\/rider(\/.*)?$/, (_req: Request, res: Response) => {
     res.sendFile(path.join(publicDir, 'rider-dashboard.html'));
   });
 
@@ -51,6 +52,9 @@ export function createApp() {
 
   // - Rider auth: /api/v1/rider/auth/request-otp, /api/v1/rider/auth/verify-otp, /api/v1/rider/auth/refresh-token, /api/v1/rider/auth/me
   app.use('/api/v1/rider/auth', authRiderRouter);
+
+  // - Rider Operations: /api/v1/rider/*
+  app.use('/api/v1/rider', riderRouter);
 
   // - Uploads: /api/v1/uploads/presign, /api/v1/uploads/file/:fileKey
   app.use('/api/v1/uploads', uploadsRouter);

@@ -7,329 +7,1903 @@
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/style.css">
 
   <style>
+    /* Full outdoor high-contrast optimizations */
     body {
-      background-color: var(--color-bg);
-      color: var(--color-text-primary);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
+      background-color: #E5E7EB;
+      margin: 0;
+      padding: 0;
+      font-family: var(--font-family);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
     }
 
-    .rider-nav {
-      background-color: #FFFFFF;
-      border-bottom: 1px solid var(--color-border);
+    .rider-toast {
+      position: fixed;
+      top: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #111827;
+      color: #FFFFFF;
       padding: 12px 20px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      position: sticky;
-      top: 0;
-      z-index: 100;
+      border-radius: 9999px;
+      font-size: 15px;
+      font-weight: 600;
+      z-index: 10000;
+      display: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+      white-space: nowrap;
     }
 
-    .rider-container {
-      max-width: 600px;
-      margin: 0 auto;
-      width: 100%;
-      padding: 20px 16px 40px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
+    .rider-toast.error {
+      background-color: #DC2626;
     }
 
-    .rider-status-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background-color: var(--color-success-bg);
-      color: var(--color-success);
-      font-size: 12px;
+    .rider-toast.success {
+      background-color: #16A34A;
+    }
+
+    .pulse-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background-color: #16A34A;
+      box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.7);
+      animation: pulse-green 1.8s infinite;
+    }
+
+    @keyframes pulse-green {
+      0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.7);
+      }
+      70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 8px rgba(22, 163, 74, 0);
+      }
+      100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(22, 163, 74, 0);
+      }
+    }
+
+    .item-toggle-btn {
+      flex: 1;
+      height: 48px;
+      min-height: 48px;
+      border-radius: 10px;
+      font-size: 15px;
       font-weight: 700;
-      padding: 3px 10px;
-      border-radius: var(--radius-pill);
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-
-    .rider-stat-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-
-    .rider-stat-box {
+      border: 2px solid #D0D5DD;
       background-color: #FFFFFF;
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-card);
-      padding: 16px;
+      color: #4B5563;
+      cursor: pointer;
       display: flex;
-      flex-direction: column;
-      gap: 4px;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.15s ease;
     }
 
-    .rider-stat-label {
-      font-size: 13px;
-      color: var(--color-text-secondary);
+    .item-toggle-btn.active-bought {
+      background-color: #DCFCE7;
+      border-color: #16A34A;
+      color: #15803D;
     }
 
-    .rider-stat-value {
-      font-size: 20px;
-      font-weight: 700;
-      color: var(--color-text-primary);
+    .item-toggle-btn.active-unavailable {
+      background-color: #FEE2E2;
+      border-color: #DC2626;
+      color: #B91C1C;
     }
   </style>
 </head>
 <body>
 
-  <!-- Top Navigation -->
-  <header class="rider-nav">
-    <div style="display: flex; align-items: center; gap: 10px;">
-      <div class="brand-wrapper">
-        <span class="brand-name">Zupit</span>
-        <span class="brand-dot"></span>
-      </div>
-      <span class="rider-status-badge" id="badge-status">
-        <span style="width: 8px; height: 8px; background-color: var(--color-success); border-radius: 50%;"></span>
-        <span id="txt-approved-badge">Approved</span>
-      </span>
-    </div>
+  <div id="toast-msg" class="rider-toast"></div>
 
-    <div style="display: flex; align-items: center; gap: 10px;">
-      <button type="button" class="lang-toggle-btn" id="lang-toggle-btn" aria-label="Switch Language">
-        <span id="lang-toggle-text">हिन्दी / EN</span>
-      </button>
-      <button type="button" class="btn-secondary" id="btn-rider-logout" style="padding: 6px 12px; font-size: 13px;">
-        <span id="txt-logout">Sign out</span>
-      </button>
-    </div>
-  </header>
+  <!-- Mobile Outdoor Container (360px - 480px) -->
+  <div class="rider-app-wrapper" id="rider-app">
 
-  <main class="rider-container">
-    
-    <!-- Rider Welcome Card -->
-    <div class="card" style="background-color: #FFFFFF; display: flex; flex-direction: column; gap: 12px;">
-      <div style="display: flex; align-items: center; justify-content: space-between;">
-        <div>
-          <span style="font-size: 13px; color: var(--color-text-secondary);" id="txt-welcome">Rider Partner</span>
-          <h1 class="hero-heading" id="rider-name-display" style="margin: 2px 0 0; font-size: 22px;">Sunil Kumar</h1>
+    <!-- Top Bar -->
+    <header class="rider-header">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div class="brand-wrapper" style="cursor: pointer;" onclick="navigateTab('home')">
+          <span class="brand-name" style="font-size: 24px;">Zupit</span>
+          <span class="brand-dot" style="width: 8px; height: 8px;"></span>
         </div>
-        <div style="text-align: right;">
-          <span style="font-size: 12px; color: var(--color-text-secondary);" id="txt-hub-label">Hub</span>
-          <div style="font-weight: 600; font-size: 14px; color: var(--color-primary);" id="val-hub">Jamui Sadar</div>
-        </div>
+        <span style="font-size: 12px; font-weight: 700; background: #EEF4FF; color: #1D3F8F; padding: 3px 8px; border-radius: 6px;">
+          Rider
+        </span>
       </div>
 
-      <div style="display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--color-text-secondary);">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
-        </svg>
-        <span id="rider-phone-display">+91 9835123401</span>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <!-- Language Switch -->
+        <button type="button" class="lang-toggle-btn" id="lang-btn" style="min-height: 44px; padding: 6px 12px; font-size: 14px; font-weight: 700;" onclick="toggleRiderLang()">
+          <span id="lang-text">हिन्दी / EN</span>
+        </button>
+        <!-- Logout -->
+        <button type="button" style="min-height: 44px; min-width: 44px; border: 1.5px solid #D0D5DD; background: #FFFFFF; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center;" onclick="logoutRider()" title="Logout" aria-label="Sign out">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4B5563" stroke-width="2">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+        </button>
       </div>
-    </div>
+    </header>
 
-    <!-- Stats Grid -->
-    <div class="rider-stat-grid">
-      <div class="rider-stat-box">
-        <span class="rider-stat-label" id="txt-cash-label">Cash in Hand</span>
-        <span class="rider-stat-value" id="val-cash-balance">₹ 0.00</span>
-      </div>
+    <!-- MAIN SCROLLABLE CONTENT -->
+    <main class="rider-content" id="main-content">
 
-      <div class="rider-stat-box">
-        <span class="rider-stat-label" id="txt-vehicle-label">Vehicle</span>
-        <span class="rider-stat-value" id="val-vehicle-num" style="font-size: 16px; margin-top: 4px;">BR-46-A-1284</span>
-        <span style="font-size: 12px; color: var(--color-text-secondary);" id="val-vehicle-type">Two Wheeler</span>
-      </div>
-    </div>
-
-    <!-- Session & Token Status (15-min Access / 30-day Refresh) -->
-    <div class="card" style="background-color: #FFFFFF; display: flex; flex-direction: column; gap: 12px;">
-      <h2 style="font-size: 16px; font-weight: 700; margin: 0;" id="txt-security-title">Session Security (JWT jose)</h2>
-      
-      <p style="font-size: 13px; color: var(--color-text-secondary); margin: 0;" id="txt-security-desc">
-        Rider access tokens are valid for 15 minutes and protected by a 30-day refresh token.
-      </p>
-
-      <div style="background-color: #F8FAFC; border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 12px 14px; font-size: 13px; display: flex; flex-direction: column; gap: 6px;">
-        <div style="display: flex; justify-content: space-between;">
-          <span id="txt-token-expiry">Access Token Expiry:</span>
-          <strong id="val-token-countdown" style="color: var(--color-primary);">14m 52s</strong>
-        </div>
-        <div style="display: flex; justify-content: space-between;">
-          <span id="txt-refresh-status">30-Day Refresh Token:</span>
-          <strong style="color: var(--color-success);" id="txt-refresh-active">ACTIVE</strong>
-        </div>
-      </div>
-
-      <button type="button" class="btn-secondary" id="btn-refresh-token" style="font-size: 13px; padding: 10px;">
-        <span id="txt-refresh-btn">Exchange Refresh Token (Get Fresh 15m Token)</span>
-      </button>
-
-      <span id="token-refresh-feedback" style="font-size: 13px; font-weight: 600; display: none;"></span>
-    </div>
-
-    <!-- Duty Status Banner -->
-    <div class="card" style="border-left: 4px solid var(--color-success); background-color: #FFFFFF;">
-      <div style="display: flex; align-items: center; justify-content: space-between;">
-        <div>
-          <span style="font-weight: 700; font-size: 15px;" id="txt-duty-status">Active Duty • On Call</span>
-          <div style="font-size: 13px; color: var(--color-text-secondary);" id="txt-duty-sub">
-            Waiting for new medicine dispatch orders from Sadar Hospital chemist shops.
+      <!-- ====================================================================
+           VIEW 1: HOME (ONLINE SWITCH, COUNTS, OPEN ORDERS)
+           ==================================================================== -->
+      <section id="view-home" class="rider-view">
+        
+        <!-- 56px Online / Offline Switch -->
+        <div class="rider-duty-switch offline" id="duty-switch" onclick="toggleDutyStatus()">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div id="duty-indicator-dot" style="width: 14px; height: 14px; border-radius: 50%; background-color: #9CA3AF;"></div>
+            <span id="duty-label-text">You are Offline</span>
+          </div>
+          <div class="rider-duty-pill" id="duty-pill">
+            <span id="duty-pill-text">Go Online</span>
           </div>
         </div>
+
+        <!-- Ongoing Active Order Banner (If assigned) -->
+        <div class="rider-card" id="banner-active-order" style="display: none; border: 2px solid #1D3F8F; background-color: #F8FAFC;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="pulse-dot"></span>
+              <span style="font-weight: 700; color: #1D3F8F; font-size: 15px;" id="txt-active-order-title">Active Order in Progress</span>
+            </div>
+            <span class="status-pill status-buying" id="banner-order-status">Buying</span>
+          </div>
+          <div style="font-size: 18px; font-weight: 800; color: #111827;" id="banner-order-id">ZP-10004</div>
+          <div style="font-size: 15px; color: #4B5563;" id="banner-order-desc">Customer: ...</div>
+          <button type="button" class="btn-rider-primary" id="btn-resume-active" onclick="resumeActiveOrder()">
+            <span id="txt-resume-btn">Continue Order →</span>
+          </button>
+        </div>
+
+        <!-- Today's Counts -->
+        <div class="rider-stat-row">
+          <div class="rider-stat-card">
+            <span style="font-size: 13px; font-weight: 600; color: #4B5563;" id="txt-stat-done">Orders Delivered</span>
+            <span class="rider-stat-num" id="stat-orders-done">0</span>
+          </div>
+          <div class="rider-stat-card">
+            <span style="font-size: 13px; font-weight: 600; color: #4B5563;" id="txt-stat-balance">Cash Balance</span>
+            <span class="rider-stat-num" style="color: #1D3F8F;" id="stat-cash-balance">₹ 0</span>
+          </div>
+          <div class="rider-stat-card">
+            <span style="font-size: 13px; font-weight: 600; color: #4B5563;" id="txt-stat-spent">Money Spent (Bills)</span>
+            <span class="rider-stat-num" id="stat-spent-today">₹ 0</span>
+          </div>
+          <div class="rider-stat-card">
+            <span style="font-size: 13px; font-weight: 600; color: #4B5563;" id="txt-stat-collected">Cash Collected</span>
+            <span class="rider-stat-num" id="stat-collected-today">₹ 0</span>
+          </div>
+        </div>
+
+        <!-- Open Orders Section -->
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 4px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <h2 style="font-size: 18px; font-weight: 800; margin: 0; color: #111827;" id="txt-open-orders-heading">Available Orders</h2>
+            <span id="live-poll-badge" class="tracking-live-indicator" style="display: none; padding: 2px 8px; font-size: 12px;">
+              <span class="live-dot"></span>
+              <span id="txt-live-poll">Live (8s)</span>
+            </span>
+          </div>
+          <button type="button" style="background: none; border: none; font-size: 14px; font-weight: 700; color: #1D3F8F; cursor: pointer; min-height: 44px; display: flex; align-items: center;" onclick="fetchRiderHome(true)" id="txt-refresh-btn">
+            Refresh
+          </button>
+        </div>
+
+        <!-- Open Orders Container -->
+        <div id="open-orders-list" style="display: flex; flex-direction: column; gap: 14px;">
+          <!-- Dynamically populated or empty state -->
+        </div>
+
+        <!-- Offline notice if offline -->
+        <div class="rider-card" id="offline-state-box" style="text-align: center; padding: 32px 18px;">
+          <div style="width: 56px; height: 56px; border-radius: 50%; background: #F3F4F6; margin: 0 auto 12px; display: flex; align-items: center; justify-content: center;">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+            </svg>
+          </div>
+          <h3 style="font-size: 18px; font-weight: 700; margin: 0 0 6px;" id="txt-offline-title">You are Offline</h3>
+          <p style="font-size: 15px; color: #6B7280; margin: 0 0 16px;" id="txt-offline-desc">Toggle the switch above to go online and receive customer orders in Jamui.</p>
+          <button type="button" class="btn-rider-primary" onclick="toggleDutyStatus()">
+            <span id="txt-go-online-btn">Go Online Now</span>
+          </button>
+        </div>
+
+      </section>
+
+      <!-- ====================================================================
+           VIEW 2: ORDER DETAIL (CUSTOMER, ADDRESS, ITEMS, PRESCRIPTIONS)
+           ==================================================================== -->
+      <section id="view-order-detail" class="rider-view" style="display: none;">
+        
+        <!-- Detail Header -->
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <button type="button" class="btn-rider-secondary" style="width: auto; height: 44px; min-height: 44px; padding: 0 14px;" onclick="navigateTab('home')">
+            ← <span id="txt-back-home">Back</span>
+          </button>
+          <span class="status-pill status-placed" id="detail-status-pill">Rider assigned</span>
+        </div>
+
+        <!-- Order Summary Card -->
+        <div class="rider-card">
+          <div style="display: flex; align-items: baseline; justify-content: space-between;">
+            <div>
+              <span style="font-size: 13px; color: #6B7280;" id="txt-order-label">Order Number</span>
+              <h2 style="font-size: 22px; font-weight: 800; margin: 2px 0 0; color: #1D3F8F;" id="detail-order-number">ZP-10001</h2>
+            </div>
+            <div style="text-align: right;">
+              <span style="font-size: 12px; color: #6B7280;" id="txt-time-label">Placed At</span>
+              <div style="font-size: 14px; font-weight: 600;" id="detail-order-time">--:--</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Customer & Delivery Card -->
+        <div class="rider-card">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1D3F8F" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <h3 style="font-size: 17px; font-weight: 700; margin: 0;" id="txt-customer-details-title">Customer & Delivery</h3>
+          </div>
+
+          <div>
+            <div style="font-size: 19px; font-weight: 800; color: #111827;" id="detail-customer-name">--</div>
+            <div style="font-size: 16px; color: #374151; margin-top: 4px;" id="detail-customer-address">--</div>
+            <div style="font-size: 14px; color: #1D3F8F; font-weight: 600; margin-top: 4px;" id="detail-customer-landmark">Landmark: --</div>
+          </div>
+
+          <!-- Contact Actions: 48px+ tap targets -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px;">
+            <a id="btn-call-customer" href="tel:" class="btn-rider-secondary" style="text-decoration: none; border-color: #16A34A; color: #16A34A;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+              </svg>
+              <span id="txt-btn-call">Call</span>
+            </a>
+            <a id="btn-wa-customer" href="https://wa.me/" target="_blank" class="btn-rider-secondary" style="text-decoration: none; border-color: #25D366; color: #128C7E;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+              </svg>
+              <span id="txt-btn-whatsapp">WhatsApp</span>
+            </a>
+          </div>
+
+          <!-- Open in Maps URL -->
+          <a id="btn-open-maps" href="https://www.google.com/maps/search/?api=1&query=" target="_blank" class="btn-rider-secondary" style="text-decoration: none; margin-top: 2px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+              <line x1="8" y1="2" x2="8" y2="18"></line>
+              <line x1="16" y1="6" x2="16" y2="22"></line>
+            </svg>
+            <span id="txt-btn-maps">Open in Maps</span>
+          </a>
+        </div>
+
+        <!-- Prescriptions Viewer Card (Thumbnails + Pinch-Zoom) -->
+        <div class="rider-card" id="detail-rx-section" style="display: none;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <h3 style="font-size: 17px; font-weight: 700; margin: 0;" id="txt-prescriptions-title">Prescriptions (Pinch to Zoom)</h3>
+            <span style="font-size: 13px; color: #1D3F8F; font-weight: 600;" id="detail-rx-count">0 photos</span>
+          </div>
+          <div id="detail-rx-grid" style="display: flex; gap: 10px; overflow-x: auto; padding: 4px 0;">
+            <!-- Rx Thumbnails -->
+          </div>
+        </div>
+
+        <!-- Items Checklist -->
+        <div class="rider-card">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <h3 style="font-size: 17px; font-weight: 700; margin: 0;" id="txt-items-checklist-title">Medicines Requested</h3>
+            <span style="font-size: 14px; font-weight: 700; color: #4B5563;" id="detail-items-count">0 items</span>
+          </div>
+          <div id="detail-items-list" style="display: flex; flex-direction: column; gap: 10px;">
+            <!-- Items rows -->
+          </div>
+        </div>
+
+        <!-- Pinned Primary CTA: 56px Start Buying -->
+        <div style="margin-top: 8px;">
+          <button type="button" class="btn-rider-primary" id="btn-start-buying" onclick="startBuyingMedicines()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="9" cy="21" r="1"></circle>
+              <circle cx="20" cy="21" r="1"></circle>
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+            </svg>
+            <span id="txt-start-buying-cta">Start buying</span>
+          </button>
+        </div>
+
+      </section>
+
+      <!-- ====================================================================
+           VIEW 3: BUYING (PHARMACY SUGGESTIONS, PER-ITEM STATUS, NOTES)
+           ==================================================================== -->
+      <section id="view-buying" class="rider-view" style="display: none;">
+        
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <button type="button" class="btn-rider-secondary" style="width: auto; height: 44px; min-height: 44px; padding: 0 14px;" onclick="loadOrderDetail(currentActiveOrderId)">
+            ← <span id="txt-back-detail">Order Details</span>
+          </button>
+          <span class="status-pill status-buying" id="txt-buying-pill">Buying medicines</span>
+        </div>
+
+        <!-- Pharmacy Selection Card -->
+        <div class="rider-card">
+          <label style="font-size: 16px; font-weight: 700; color: #111827;" for="input-pharmacy-name" id="txt-pharmacy-label">
+            Pharmacy Name
+          </label>
+          <input type="text" id="input-pharmacy-name" class="rider-amount-input" style="font-size: 17px; font-weight: 600;" placeholder="e.g. Jan Aushadhi Kendra, Station Road">
+          
+          <div>
+            <span style="font-size: 13px; font-weight: 600; color: #6B7280;" id="txt-suggested-pharmacies">Past Pharmacies (Tap to select):</span>
+            <div class="pharmacy-chip-container" id="pharmacy-suggestions">
+              <!-- Chips -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Per-item Checklist with Bought / Unavailable toggles -->
+        <div class="rider-card">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <h3 style="font-size: 17px; font-weight: 700; margin: 0;" id="txt-buying-checklist-title">Check Medicines at Counter</h3>
+            <a id="btn-buying-call-customer" href="tel:" class="btn-rider-secondary" style="width: auto; height: 40px; min-height: 40px; padding: 0 12px; font-size: 14px; text-decoration: none; border-color: #16A34A; color: #16A34A;">
+              📞 <span id="txt-call-customer-shortcut">Call Customer</span>
+            </a>
+          </div>
+
+          <div id="buying-items-container" style="display: flex; flex-direction: column; gap: 14px;">
+            <!-- Dynamic buying rows -->
+          </div>
+        </div>
+
+        <!-- Pinned CTA: Upload Bill (56px) -->
+        <div style="margin-top: 8px;">
+          <button type="button" class="btn-rider-primary" onclick="openBillScreen()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="12" y1="8" x2="12" y2="16"></line>
+              <line x1="8" y1="12" x2="16" y2="12"></line>
+            </svg>
+            <span id="txt-upload-bill-cta">Upload bill</span>
+          </button>
+        </div>
+
+      </section>
+
+      <!-- ====================================================================
+           VIEW 4: BILL (CAMERA CAPTURE, AMOUNT 32PX, MULTI-BILL, THRESHOLD)
+           ==================================================================== -->
+      <section id="view-bill" class="rider-view" style="display: none;">
+        
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <button type="button" class="btn-rider-secondary" style="width: auto; height: 44px; min-height: 44px; padding: 0 14px;" onclick="navigateTab('buying')">
+            ← <span id="txt-back-buying">Back to Buying</span>
+          </button>
+          <span class="status-pill status-buying" id="txt-bill-header-pill">Bill upload</span>
+        </div>
+
+        <!-- Add Bill Card -->
+        <div class="rider-card">
+          <h3 style="font-size: 18px; font-weight: 800; margin: 0; color: #111827;" id="txt-add-bill-title">
+            Take Pharmacy Bill Photo
+          </h3>
+
+          <!-- Camera Capture: 56px+ tap target with environment rear camera -->
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <input type="file" id="bill-camera-input" accept="image/*" capture="environment" style="display: none;" onchange="handleBillPhotoSelect(event)">
+            
+            <button type="button" class="btn-rider-primary" style="background-color: #0F766E;" onclick="document.getElementById('bill-camera-input').click()">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                <circle cx="12" cy="13" r="4"></circle>
+              </svg>
+              <span id="txt-btn-camera">Open Camera (Bill Photo)</span>
+            </button>
+
+            <!-- Compression status / thumbnail preview -->
+            <div id="bill-photo-preview-container" style="display: none; align-items: center; gap: 12px; background: #F8FAFC; border: 1.5px dashed #CBD5E1; border-radius: 12px; padding: 10px;">
+              <img id="bill-photo-preview-img" src="" alt="Bill Preview" style="width: 64px; height: 64px; object-fit: cover; border-radius: 8px; border: 1px solid #E2E8F0;">
+              <div style="flex: 1;">
+                <div style="font-size: 14px; font-weight: 700; color: #15803D;" id="bill-upload-status">Photo compressed & ready</div>
+                <div style="font-size: 12px; color: #64748B;" id="bill-file-info">-- KB</div>
+              </div>
+              <button type="button" style="background: none; border: none; color: #DC2626; font-size: 14px; font-weight: 700; cursor: pointer; min-height: 44px; padding: 0 8px;" onclick="clearCurrentBillPhoto()">
+                Remove
+              </button>
+            </div>
+          </div>
+
+          <!-- Pharmacy Name for this bill -->
+          <div>
+            <label style="font-size: 15px; font-weight: 700; color: #374151;" for="bill-pharmacy-input" id="txt-bill-pharmacy-label">
+              Pharmacy Name
+            </label>
+            <input type="text" id="bill-pharmacy-input" class="rider-amount-input" style="font-size: 16px; margin-top: 4px;" placeholder="Jan Aushadhi Kendra">
+          </div>
+
+          <!-- Amount Field at 32px with number keypad -->
+          <div>
+            <label style="font-size: 15px; font-weight: 700; color: #374151;" for="bill-amount-input" id="txt-bill-amount-label">
+              Bill Amount (₹)
+            </label>
+            <div style="position: relative; margin-top: 4px;">
+              <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 28px; font-weight: 800; color: #1D3F8F;">₹</span>
+              <input type="number" id="bill-amount-input" inputmode="decimal" step="0.5" class="rider-amount-input" style="padding-left: 42px;" placeholder="0">
+            </div>
+          </div>
+
+          <button type="button" class="btn-rider-secondary" id="btn-add-bill-to-list" onclick="saveCurrentBillToList()">
+            + <span id="txt-btn-add-bill">Add this bill</span>
+          </button>
+        </div>
+
+        <!-- List of Bills Added for this Order -->
+        <div class="rider-card" id="card-bills-list" style="display: none;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <h3 style="font-size: 17px; font-weight: 700; margin: 0;" id="txt-uploaded-bills-title">Bills for this Order</h3>
+            <span style="font-size: 14px; font-weight: 700; color: #1D3F8F;" id="badge-bill-count">0 bills</span>
+          </div>
+
+          <div id="bills-items-list" style="display: flex; flex-direction: column; gap: 8px;">
+            <!-- Dynamically rendered bill cards -->
+          </div>
+
+          <!-- Running Total in 32px Semibold -->
+          <div style="border-top: 2px solid #E5E7EB; padding-top: 12px; margin-top: 4px; display: flex; align-items: baseline; justify-content: space-between;">
+            <span style="font-size: 17px; font-weight: 700; color: #374151;" id="txt-total-bills-label">Total Bills:</span>
+            <span class="rider-amount-display" id="val-total-bills-sum">₹ 0</span>
+          </div>
+        </div>
+
+        <!-- Threshold Confirmation Checkbox (If total bills > bill_confirm_threshold e.g. ₹2000) -->
+        <div class="rider-card" id="card-threshold-warning" style="display: none; background-color: #FFFBEB; border-color: #FDE68A;">
+          <div style="display: flex; align-items: flex-start; gap: 10px;">
+            <span style="font-size: 24px;">⚠️</span>
+            <div>
+              <div style="font-size: 16px; font-weight: 800; color: #92400E;" id="txt-threshold-title">High Bill Value Warning</div>
+              <p style="font-size: 14px; color: #78350F; margin: 4px 0 10px;" id="txt-threshold-desc">
+                Total bill exceeds ₹<span id="val-threshold-limit">2000</span>. Please call the customer to confirm the total amount before proceeding.
+              </p>
+              
+              <label style="display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 700; color: #92400E; cursor: pointer;">
+                <input type="checkbox" id="chk-customer-confirmed-call" style="width: 24px; height: 24px; accent-color: #1D3F8F;">
+                <span id="txt-chk-customer-confirmed">Customer confirmed by call</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pinned 56px CTA: Submit and go to delivery -->
+        <div style="margin-top: 8px;">
+          <button type="button" class="btn-rider-primary" id="btn-submit-bills-cta" onclick="submitBillsAndGoDelivery()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            <span id="txt-submit-bills-btn">Submit and go to delivery</span>
+          </button>
+        </div>
+
+      </section>
+
+      <!-- ====================================================================
+           VIEW 5: DELIVERY (AMOUNT TO COLLECT, CASH/ONLINE, 4-DIGIT CODE, FAILED)
+           ==================================================================== -->
+      <section id="view-delivery" class="rider-view" style="display: none;">
+        
+        <!-- Header -->
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <button type="button" class="btn-rider-secondary" style="width: auto; height: 44px; min-height: 44px; padding: 0 14px;" onclick="loadOrderDetail(currentActiveOrderId)">
+            ← <span id="txt-back-delivery-order">Order Info</span>
+          </button>
+          <span class="status-pill status-out_for_delivery" id="txt-delivery-pill">Out for delivery</span>
+        </div>
+
+        <!-- Customer Card with shortcuts -->
+        <div class="rider-card">
+          <div style="display: flex; align-items: baseline; justify-content: space-between;">
+            <div>
+              <span style="font-size: 13px; color: #6B7280;" id="txt-delivering-to">Delivering To</span>
+              <h3 style="font-size: 20px; font-weight: 800; margin: 2px 0 0;" id="delivery-customer-name">--</h3>
+            </div>
+            <a id="btn-delivery-call" href="tel:" class="btn-rider-secondary" style="width: auto; height: 40px; min-height: 40px; padding: 0 12px; font-size: 14px; text-decoration: none; border-color: #16A34A; color: #16A34A;">
+              📞 <span id="txt-call-btn">Call</span>
+            </a>
+          </div>
+          <div style="font-size: 15px; color: #4B5563;" id="delivery-customer-address">--</div>
+          
+          <a id="btn-delivery-maps" href="https://www.google.com/maps/search/?api=1&query=" target="_blank" class="btn-rider-secondary" style="text-decoration: none; margin-top: 4px;">
+            📍 <span id="txt-delivery-maps-btn">Open in Maps</span>
+          </a>
+        </div>
+
+        <!-- Amount to Collect Card: 28px+ / 36px font -->
+        <div class="rider-card" style="background-color: #EFF6FF; border-color: #BFDBFE;">
+          <span style="font-size: 15px; font-weight: 700; color: #1E40AF;" id="txt-amount-collect-title">
+            Amount to collect from customer
+          </span>
+          <div class="rider-amount-display" id="delivery-amount-to-collect" style="color: #1D3F8F;">
+            ₹ 0
+          </div>
+
+          <!-- Payment Mode Selection -->
+          <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 4px;">
+            <label style="display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 700; cursor: pointer; padding: 10px 12px; background: #FFFFFF; border: 1.5px solid #D0D5DD; border-radius: 12px;">
+              <input type="radio" name="payment-collect-method" value="cod" checked style="width: 20px; height: 20px; accent-color: #1D3F8F;">
+              <span id="txt-opt-cash-collected">💵 Cash collected</span>
+            </label>
+
+            <label id="lbl-online-payment" style="display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 700; cursor: pointer; padding: 10px 12px; background: #FFFFFF; border: 1.5px solid #D0D5DD; border-radius: 12px;">
+              <input type="radio" name="payment-collect-method" value="online" id="radio-online-payment" style="width: 20px; height: 20px; accent-color: #1D3F8F;">
+              <div>
+                <span id="txt-opt-paid-online">💳 Paid online</span>
+                <div style="font-size: 12px; font-weight: 500; color: #6B7280;" id="txt-online-pay-subtext">Verified automatically when customer pays</div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- 4-Digit Code Card (Boxes: 56x64px, 32px digits) -->
+        <div class="rider-card" style="text-align: center;">
+          <h3 style="font-size: 18px; font-weight: 800; margin: 0; color: #111827;" id="txt-delivery-code-title">
+            Enter 4-Digit Delivery Code
+          </h3>
+          <p style="font-size: 14px; color: #4B5563; margin: 2px 0 10px;" id="txt-delivery-code-sub">
+            Ask the customer for the code displayed on their tracking screen.
+          </p>
+
+          <div class="rider-code-grid">
+            <input type="tel" maxlength="1" class="rider-code-box" id="code-box-1" oninput="handleCodeInput(1)" onkeydown="handleCodeKeydown(event, 1)">
+            <input type="tel" maxlength="1" class="rider-code-box" id="code-box-2" oninput="handleCodeInput(2)" onkeydown="handleCodeKeydown(event, 2)">
+            <input type="tel" maxlength="1" class="rider-code-box" id="code-box-3" oninput="handleCodeInput(3)" onkeydown="handleCodeKeydown(event, 3)">
+            <input type="tel" maxlength="1" class="rider-code-box" id="code-box-4" oninput="handleCodeInput(4)" onkeydown="handleCodeKeydown(event, 4)">
+          </div>
+
+          <div style="font-size: 13px; font-weight: 600; color: #6B7280;" id="txt-code-attempts-info">
+            Max 5 attempts allowed
+          </div>
+        </div>
+
+        <!-- Pinned CTA: Verify & Complete (56px) -->
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 4px;">
+          <button type="button" class="btn-rider-primary" id="btn-verify-delivery-cta" onclick="verifyAndDeliverOrder()">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+            <span id="txt-verify-complete-btn">Verify Code & Deliver</span>
+          </button>
+
+          <!-- Could not deliver text/outline button -->
+          <button type="button" class="btn-rider-danger-outline" onclick="openFailDeliveryModal()">
+            <span id="txt-could-not-deliver-btn">Could not deliver</span>
+          </button>
+        </div>
+
+      </section>
+
+      <!-- ====================================================================
+           VIEW 6: SUMMARY (ORDERS DONE, SPENT, COLLECTED, BALANCE, LEDGER)
+           ==================================================================== -->
+      <section id="view-summary" class="rider-view" style="display: none;">
+        
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <h2 style="font-size: 20px; font-weight: 800; margin: 0; color: #111827;" id="txt-summary-title">Today's Performance</h2>
+          <button type="button" class="btn-rider-secondary" style="width: auto; height: 40px; min-height: 40px; padding: 0 14px; font-size: 14px;" onclick="loadRiderSummary()">
+            Refresh
+          </button>
+        </div>
+
+        <!-- Stats Card -->
+        <div class="rider-stat-row">
+          <div class="rider-stat-card" style="background: #F0FDF4; border-color: #BBF7D0;">
+            <span style="font-size: 13px; font-weight: 600; color: #166534;" id="txt-sum-orders-done">Orders Done</span>
+            <span class="rider-stat-num" style="color: #15803D;" id="sum-val-orders-done">0</span>
+          </div>
+          <div class="rider-stat-card" style="background: #EFF6FF; border-color: #BFDBFE;">
+            <span style="font-size: 13px; font-weight: 600; color: #1E40AF;" id="txt-sum-balance">Net Balance</span>
+            <span class="rider-stat-num" style="color: #1D3F8F;" id="sum-val-balance">₹ 0</span>
+          </div>
+          <div class="rider-stat-card">
+            <span style="font-size: 13px; font-weight: 600; color: #4B5563;" id="txt-sum-spent">Money Spent</span>
+            <span class="rider-stat-num" style="color: #DC2626;" id="sum-val-spent">₹ 0</span>
+          </div>
+          <div class="rider-stat-card">
+            <span style="font-size: 13px; font-weight: 600; color: #4B5563;" id="txt-sum-collected">Cash Collected</span>
+            <span class="rider-stat-num" style="color: #16A34A;" id="sum-val-collected">₹ 0</span>
+          </div>
+        </div>
+
+        <!-- Today's Orders List -->
+        <div class="rider-card">
+          <h3 style="font-size: 17px; font-weight: 700; margin: 0;" id="txt-today-orders-title">Today's Orders</h3>
+          <div id="sum-orders-list" style="display: flex; flex-direction: column; gap: 10px;">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <!-- Cash Ledger History -->
+        <div class="rider-card">
+          <h3 style="font-size: 17px; font-weight: 700; margin: 0;" id="txt-ledger-title">Cash Ledger History</h3>
+          <div id="sum-ledger-list" style="display: flex; flex-direction: column; gap: 8px;">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+      </section>
+
+    </main>
+
+    <!-- BOTTOM TAB NAVIGATION (48px+ tap targets) -->
+    <nav class="rider-bottom-nav">
+      <button type="button" class="rider-nav-item active" id="tab-home" onclick="navigateTab('home')">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+          <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+        <span id="txt-tab-home">Home</span>
+      </button>
+
+      <button type="button" class="rider-nav-item" id="tab-active" onclick="navigateTab('active')">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+        <span id="txt-tab-active">Active Order</span>
+      </button>
+
+      <button type="button" class="rider-nav-item" id="tab-summary" onclick="navigateTab('summary')">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="20" x2="18" y2="10"></line>
+          <line x1="12" y1="20" x2="12" y2="4"></line>
+          <line x1="6" y1="20" x2="6" y2="14"></line>
+        </svg>
+        <span id="txt-tab-summary">Summary</span>
+      </button>
+
+      <a href="tel:+916207856200" class="rider-nav-item" id="tab-help" style="text-decoration: none;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+        </svg>
+        <span id="txt-tab-help">Call Ops</span>
+      </a>
+    </nav>
+
+  </div>
+
+  <!-- FULLSCREEN PINCH-ZOOM LIGHTBOX MODAL -->
+  <div id="rx-lightbox" class="rider-lightbox-modal" style="display: none;">
+    <div class="rider-lightbox-bar">
+      <span style="font-size: 16px; font-weight: 700;" id="txt-lightbox-heading">Prescription Image</span>
+      <div class="rider-lightbox-tools">
+        <button type="button" class="rider-tool-btn" onclick="zoomLightbox(0.25)" title="Zoom In">+</button>
+        <button type="button" class="rider-tool-btn" onclick="zoomLightbox(-0.25)" title="Zoom Out">-</button>
+        <button type="button" class="rider-tool-btn" onclick="resetLightboxZoom()" title="Reset" style="font-size: 14px;">1:1</button>
+        <button type="button" class="rider-tool-btn" onclick="closeRxLightbox()" title="Close" style="background: rgba(220, 38, 38, 0.6);">✕</button>
       </div>
     </div>
+    <div class="rider-lightbox-viewport" id="lightbox-viewport">
+      <img id="lightbox-img" class="rider-lightbox-img" src="" alt="Prescription Full">
+    </div>
+  </div>
 
-  </main>
+  <!-- COULD NOT DELIVER REASON MODAL -->
+  <div id="modal-fail-delivery" class="modal-backdrop" style="display: none;">
+    <div class="modal-dialog" style="max-width: 360px; width: 90%;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+        <h3 style="font-size: 18px; font-weight: 800; margin: 0; color: #DC2626;" id="txt-fail-modal-title">Could not deliver</h3>
+        <button type="button" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #6B7280;" onclick="closeFailDeliveryModal()">✕</button>
+      </div>
+      <p style="font-size: 14px; color: #4B5563; margin: 0 0 14px;" id="txt-fail-modal-desc">
+        Select the exact reason why this order could not be delivered:
+      </p>
 
+      <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;">
+        <label style="display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 600; padding: 10px 12px; border: 1.5px solid #D0D5DD; border-radius: 10px; cursor: pointer;">
+          <input type="radio" name="fail-reason" value="Customer unreachable" checked style="accent-color: #DC2626; width: 18px; height: 18px;">
+          <span id="txt-reason-unreachable">Customer unreachable (फोन नहीं उठा)</span>
+        </label>
+        <label style="display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 600; padding: 10px 12px; border: 1.5px solid #D0D5DD; border-radius: 10px; cursor: pointer;">
+          <input type="radio" name="fail-reason" value="Customer refused order" style="accent-color: #DC2626; width: 18px; height: 18px;">
+          <span id="txt-reason-refused">Customer refused order (लेने से मना किया)</span>
+        </label>
+        <label style="display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 600; padding: 10px 12px; border: 1.5px solid #D0D5DD; border-radius: 10px; cursor: pointer;">
+          <input type="radio" name="fail-reason" value="Wrong address" style="accent-color: #DC2626; width: 18px; height: 18px;">
+          <span id="txt-reason-address">Wrong address (पता नहीं मिला)</span>
+        </label>
+        <label style="display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 600; padding: 10px 12px; border: 1.5px solid #D0D5DD; border-radius: 10px; cursor: pointer;">
+          <input type="radio" name="fail-reason" value="Other" style="accent-color: #DC2626; width: 18px; height: 18px;">
+          <span id="txt-reason-other">Other reason (अन्य कारण)</span>
+        </label>
+      </div>
+
+      <div style="display: flex; gap: 10px;">
+        <button type="button" class="btn-rider-secondary" style="height: 48px;" onclick="closeFailDeliveryModal()" id="txt-fail-cancel-btn">
+          Cancel
+        </button>
+        <button type="button" class="btn-rider-primary" style="background-color: #DC2626; height: 48px;" onclick="submitFailDelivery()" id="txt-fail-confirm-btn">
+          Confirm Failure
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUCCESS DIALOG MODAL -->
+  <div id="modal-success" class="modal-backdrop" style="display: none;">
+    <div class="modal-dialog" style="max-width: 360px; width: 90%; text-align: center; padding: 24px 20px;">
+      <div style="width: 64px; height: 64px; border-radius: 50%; background: #DCFCE7; color: #16A34A; display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 0 auto 14px;">
+        ✓
+      </div>
+      <h3 style="font-size: 20px; font-weight: 800; margin: 0 0 6px; color: #111827;" id="txt-success-title">Order Delivered!</h3>
+      <p style="font-size: 15px; color: #4B5563; margin: 0 0 18px;" id="txt-success-desc">Great job! The payment and ledger entries have been recorded.</p>
+      <button type="button" class="btn-rider-primary" onclick="closeSuccessModalAndGoHome()" id="txt-success-ok-btn">
+        Back to Available Orders
+      </button>
+    </div>
+  </div>
+
+  <!-- APPLICATION JAVASCRIPT LOGIC -->
   <script>
-    const I18N = {
+    // State
+    let riderProfile = null;
+    let isDutyOnline = false;
+    let currentLang = localStorage.getItem('zupit_rider_lang') || 'en';
+    let pollInterval = null;
+    let currentActiveOrderId = null;
+    let currentOrderData = null;
+    let pendingBillPhotoKey = null;
+    let pendingBillPhotoUrl = null;
+    let currentLightboxScale = 1;
+
+    // Bilingual Dictionary
+    const RIDER_I18N = {
       en: {
-        toggle: "हिन्दी / EN",
-        approvedBadge: "Approved",
-        logout: "Sign out",
-        welcome: "Rider Partner",
-        hubLabel: "Hub",
-        cashLabel: "Cash in Hand",
-        vehicleLabel: "Vehicle",
-        securityTitle: "Session Security (JWT jose)",
-        securityDesc: "Rider access tokens are valid for 15 minutes and protected by a 30-day refresh token.",
-        tokenExpiry: "Access Token Expiry:",
-        refreshStatus: "30-Day Refresh Token:",
-        refreshActive: "ACTIVE",
-        refreshBtn: "Exchange Refresh Token (Get Fresh 15m Token)",
-        dutyStatus: "Active Duty • On Call",
-        dutySub: "Waiting for new medicine dispatch orders from Sadar Hospital chemist shops.",
-        tokenRefreshedMsg: "Token refreshed successfully! Session extended by 15 minutes.",
+        offlineTitle: 'You are Offline',
+        offlineDesc: 'Toggle the switch above to go online and receive customer orders in Jamui.',
+        goOnlineBtn: 'Go Online Now',
+        goOnlinePill: 'Go Online',
+        goOfflinePill: 'Go Offline',
+        onlineStatusText: 'You are Online - Ready for orders',
+        offlineStatusText: 'You are Offline',
+        ordersDelivered: 'Orders Delivered',
+        cashBalance: 'Cash Balance',
+        moneySpent: 'Money Spent (Bills)',
+        cashCollected: 'Cash Collected',
+        availableOrders: 'Available Orders',
+        refresh: 'Refresh',
+        noOrdersNow: 'No orders right now. We will alert you.',
+        activeOrderInProgress: 'Active Order in Progress',
+        continueOrder: 'Continue Order →',
+        acceptOrder: 'Accept',
+        takenByAnother: 'Taken by another rider',
+        back: 'Back',
+        backToBuying: 'Back to Buying',
+        startBuying: 'Start buying',
+        uploadBill: 'Upload bill',
+        submitAndDeliver: 'Submit and go to delivery',
+        verifyAndDeliver: 'Verify Code & Deliver',
+        couldNotDeliver: 'Could not deliver',
+        medicinesRequested: 'Medicines Requested',
+        prescriptions: 'Prescriptions (Pinch to Zoom)',
+        call: 'Call',
+        whatsApp: 'WhatsApp',
+        openInMaps: 'Open in Maps',
+        orderNumber: 'Order Number',
+        customerAndDelivery: 'Customer & Delivery',
+        buyingMedicines: 'Buying medicines',
+        pharmacyName: 'Pharmacy Name',
+        pastPharmacies: 'Past Pharmacies (Tap to select):',
+        checkMedicines: 'Check Medicines at Counter',
+        takeBillPhoto: 'Take Pharmacy Bill Photo',
+        openCamera: 'Open Camera (Bill Photo)',
+        addThisBill: 'Add this bill',
+        billsForOrder: 'Bills for this Order',
+        totalBills: 'Total Bills:',
+        thresholdTitle: 'High Bill Value Warning',
+        thresholdDesc: 'Total bill exceeds ₹{limit}. Please call the customer to confirm the total amount before proceeding.',
+        customerConfirmedCall: 'Customer confirmed by call',
+        deliveringTo: 'Delivering To',
+        amountToCollect: 'Amount to collect from customer',
+        cashOption: '💵 Cash collected',
+        onlineOption: '💳 Paid online',
+        enter4DigitCode: 'Enter 4-Digit Delivery Code',
+        codeHelper: 'Ask the customer for the code displayed on their tracking screen.',
+        todayPerformance: "Today's Performance",
+        todayOrders: "Today's Orders",
+        cashLedgerHistory: 'Cash Ledger History',
+        homeTab: 'Home',
+        activeTab: 'Active Order',
+        summaryTab: 'Summary',
+        helpTab: 'Call Ops',
       },
       hi: {
-        toggle: "EN / हिन्दी",
-        approvedBadge: "स्वीकृत",
-        logout: "लॉगआउट",
-        welcome: "राइडर साथी",
-        hubLabel: "हब",
-        cashLabel: "हाथ में नकद",
-        vehicleLabel: "वाहन",
-        securityTitle: "सत्र सुरक्षा (JWT jose)",
-        securityDesc: "राइडर एक्सेस टोकन 15 मिनट के लिए मान्य है और 30 दिन का रिफ्रेश टोकन सक्रिय है।",
-        tokenExpiry: "एक्सेस टोकन समाप्ति:",
-        refreshStatus: "30-दिवसीय रिफ्रेश टोकन:",
-        refreshActive: "सक्रिय",
-        refreshBtn: "रिफ्रेश टोकन का उपयोग करें (नया 15 मिनट टोकन प्राप्त करें)",
-        dutyStatus: "सक्रिय ड्यूटी • उपलब्ध",
-        dutySub: "सदर अस्पताल दवा दुकानों से नए ऑर्डर की प्रतीक्षा कर रहे हैं।",
-        tokenRefreshedMsg: "टोकन सफलतापूर्वक नवीनीकृत हुआ! सत्र 15 मिनट के लिए बढ़ा दिया गया।",
+        offlineTitle: 'आप अभी ऑफलाइन हैं',
+        offlineDesc: 'जमुई में ग्राहकों के नए ऑर्डर पाने के लिए ऊपर दिए गए स्विच से ऑनलाइन जाएं।',
+        goOnlineBtn: 'अभी ऑनलाइन जाएं',
+        goOnlinePill: 'ऑनलाइन जाएं',
+        goOfflinePill: 'ऑफलाइन जाएं',
+        onlineStatusText: 'आप ऑनलाइन हैं - नए ऑर्डर तैयार हैं',
+        offlineStatusText: 'आप ऑफलाइन हैं',
+        ordersDelivered: 'डिलीवर हुए ऑर्डर',
+        cashBalance: 'नकद शेष (Cash Balance)',
+        moneySpent: 'दवाओं पर खर्च (बिल)',
+        cashCollected: 'नकद प्राप्त (Cash Collected)',
+        availableOrders: 'उपलब्ध नए ऑर्डर',
+        refresh: 'रिफ्रेश',
+        noOrdersNow: 'अभी कोई नया ऑर्डर नहीं है। ऑर्डर आते ही अलर्ट बजेगा।',
+        activeOrderInProgress: 'चालू ऑर्डर प्रगति में है',
+        continueOrder: 'ऑर्डर जारी रखें →',
+        acceptOrder: 'स्वीकार करें (Accept)',
+        takenByAnother: 'यह ऑर्डर किसी अन्य राइडर ने ले लिया है',
+        back: 'पीछे',
+        backToBuying: 'खरीदारी पर वापस जाएं',
+        startBuying: 'दवा खरीदना शुरू करें',
+        uploadBill: 'बिल अपलोड करें',
+        submitAndDeliver: 'बिल जमा करें और डिलीवरी पर जाएं',
+        verifyAndDeliver: 'कोड सत्यापित करें और डिलीवर करें',
+        couldNotDeliver: 'डिलीवर नहीं हो सका',
+        medicinesRequested: 'मांगी गई दवाइयां',
+        prescriptions: 'पर्चे (ज़ूम करने के लिए टैप करें)',
+        call: 'कॉल करें',
+        whatsApp: 'व्हाट्सएप',
+        openInMaps: 'गूगल मैप में खोलें',
+        orderNumber: 'ऑर्डर संख्या',
+        customerAndDelivery: 'ग्राहक और डिलीवरी पता',
+        buyingMedicines: 'दवा खरीदी जा रही है',
+        pharmacyName: 'दुकान/मेडिकल हॉल का नाम',
+        pastPharmacies: 'पिछली दुकानें (चुनने के लिए टैप करें):',
+        checkMedicines: 'काउंटर पर दवाइयां जांचें',
+        takeBillPhoto: 'दवा बिल का फोटो खींचें',
+        openCamera: 'कैमरा खोलें (बिल फोटो)',
+        addThisBill: 'यह बिल जोड़ें',
+        billsForOrder: 'इस ऑर्डर के सभी बिल',
+        totalBills: 'कुल बिल राशि:',
+        thresholdTitle: 'अधिक राशि की चेतावनी',
+        thresholdDesc: 'कुल बिल ₹{limit} से अधिक है। आगे बढ़ने से पहले ग्राहक को कॉल करके पुष्टि करें।',
+        customerConfirmedCall: 'ग्राहक ने फोन पर पुष्टि कर दी है',
+        deliveringTo: 'डिलीवरी पता',
+        amountToCollect: 'ग्राहक से ली जाने वाली राशि',
+        cashOption: '💵 नकद प्राप्त किया (Cash)',
+        onlineOption: '💳 ऑनलाइन भुगतान (Paid online)',
+        enter4DigitCode: '4-अंकों का डिलीवरी कोड दर्ज करें',
+        codeHelper: 'ग्राहक से उनके ट्रैकिंग स्क्रीन पर दिख रहा 4-अंकों का कोड पूछें।',
+        todayPerformance: 'आज का हिसाब-किताब',
+        todayOrders: 'आज के ऑर्डर',
+        cashLedgerHistory: 'कैश लेजर लेनदेन',
+        homeTab: 'होम',
+        activeTab: 'चालू ऑर्डर',
+        summaryTab: 'हिसाब (Summary)',
+        helpTab: 'मदद (Ops)',
       }
     };
 
-    let currentLang = 'en';
-    let remainingSeconds = 15 * 60; // 15 mins
-
-    function setLanguage(lang) {
-      currentLang = lang;
-      const dict = I18N[lang];
-      document.getElementById('lang-toggle-text').textContent = dict.toggle;
-      document.getElementById('txt-approved-badge').textContent = dict.approvedBadge;
-      document.getElementById('txt-logout').textContent = dict.logout;
-      document.getElementById('txt-welcome').textContent = dict.welcome;
-      document.getElementById('txt-hub-label').textContent = dict.hubLabel;
-      document.getElementById('txt-cash-label').textContent = dict.cashLabel;
-      document.getElementById('txt-vehicle-label').textContent = dict.vehicleLabel;
-      document.getElementById('txt-security-title').textContent = dict.securityTitle;
-      document.getElementById('txt-security-desc').textContent = dict.securityDesc;
-      document.getElementById('txt-token-expiry').textContent = dict.tokenExpiry;
-      document.getElementById('txt-refresh-status').textContent = dict.refreshStatus;
-      document.getElementById('txt-refresh-active').textContent = dict.refreshActive;
-      document.getElementById('txt-refresh-btn').textContent = dict.refreshBtn;
-      document.getElementById('txt-duty-status').textContent = dict.dutyStatus;
-      document.getElementById('txt-duty-sub').textContent = dict.dutySub;
+    function t(key, params = {}) {
+      let str = RIDER_I18N[currentLang]?.[key] || RIDER_I18N.en[key] || key;
+      for (const [k, v] of Object.entries(params)) {
+        str = str.replace(`{${k}}`, v);
+      }
+      return str;
     }
 
-    document.getElementById('lang-toggle-btn').addEventListener('click', () => {
-      setLanguage(currentLang === 'en' ? 'hi' : 'en');
-    });
+    function showToast(msg, type = 'info') {
+      const el = document.getElementById('toast-msg');
+      el.textContent = msg;
+      el.className = `rider-toast ${type}`;
+      el.style.display = 'block';
+      setTimeout(() => {
+        el.style.display = 'none';
+      }, 3000);
+    }
 
-    // Countdown timer for 15-minute access token
-    setInterval(() => {
-      if (remainingSeconds > 0) {
-        remainingSeconds--;
-        const m = Math.floor(remainingSeconds / 60);
-        const s = remainingSeconds % 60;
-        document.getElementById('val-token-countdown').textContent = `${m}m ${s < 10 ? '0' : ''}${s}s`;
-      } else {
-        document.getElementById('val-token-countdown').textContent = "Expired (Refresh required)";
-        document.getElementById('val-token-countdown').style.color = "var(--color-error)";
-      }
-    }, 1000);
-
-    // Fetch Rider info
-    async function fetchRiderMe() {
+    // Play Alert Sound (Synth chime)
+    function playNewOrderChime() {
       try {
-        const res = await fetch('/api/v1/rider/auth/me');
-        if (!res.ok) {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime + 0.15); // A5
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.4);
+      } catch (e) {
+        console.warn('Audio alert error:', e);
+      }
+
+      // Vibrate outdoor notification
+      if (navigator.vibrate) {
+        try {
+          navigator.vibrate([200, 100, 200]);
+        } catch (_) {}
+      }
+    }
+
+    // Language Toggle
+    function toggleRiderLang() {
+      currentLang = currentLang === 'en' ? 'hi' : 'en';
+      localStorage.setItem('zupit_rider_lang', currentLang);
+      applyTranslations();
+      if (currentActiveOrderId) {
+        loadOrderDetail(currentActiveOrderId);
+      } else {
+        fetchRiderHome(false);
+      }
+    }
+
+    function applyTranslations() {
+      document.getElementById('lang-text').textContent = currentLang === 'en' ? 'हिन्दी / EN' : 'EN / हिन्दी';
+      
+      document.getElementById('txt-stat-done').textContent = t('ordersDelivered');
+      document.getElementById('txt-stat-balance').textContent = t('cashBalance');
+      document.getElementById('txt-stat-spent').textContent = t('moneySpent');
+      document.getElementById('txt-stat-collected').textContent = t('cashCollected');
+      document.getElementById('txt-open-orders-heading').textContent = t('availableOrders');
+      document.getElementById('txt-refresh-btn').textContent = t('refresh');
+      document.getElementById('txt-offline-title').textContent = t('offlineTitle');
+      document.getElementById('txt-offline-desc').textContent = t('offlineDesc');
+      document.getElementById('txt-go-online-btn').textContent = t('goOnlineBtn');
+      document.getElementById('txt-active-order-title').textContent = t('activeOrderInProgress');
+      document.getElementById('txt-resume-btn').textContent = t('continueOrder');
+      
+      document.getElementById('txt-tab-home').textContent = t('homeTab');
+      document.getElementById('txt-tab-active').textContent = t('activeTab');
+      document.getElementById('txt-tab-summary').textContent = t('summaryTab');
+      document.getElementById('txt-tab-help').textContent = t('helpTab');
+
+      updateDutySwitchUI();
+    }
+
+    function updateDutySwitchUI() {
+      const switchEl = document.getElementById('duty-switch');
+      const dotEl = document.getElementById('duty-indicator-dot');
+      const labelEl = document.getElementById('duty-label-text');
+      const pillTextEl = document.getElementById('duty-pill-text');
+
+      if (isDutyOnline) {
+        switchEl.className = 'rider-duty-switch online';
+        dotEl.className = 'pulse-dot';
+        labelEl.textContent = t('onlineStatusText');
+        pillTextEl.textContent = t('goOfflinePill');
+        document.getElementById('offline-state-box').style.display = 'none';
+        document.getElementById('live-poll-badge').style.display = 'inline-flex';
+      } else {
+        switchEl.className = 'rider-duty-switch offline';
+        dotEl.className = '';
+        dotEl.style.backgroundColor = '#9CA3AF';
+        labelEl.textContent = t('offlineStatusText');
+        pillTextEl.textContent = t('goOnlinePill');
+        document.getElementById('offline-state-box').style.display = 'block';
+        document.getElementById('live-poll-badge').style.display = 'none';
+        document.getElementById('open-orders-list').innerHTML = '';
+      }
+    }
+
+    // Toggle Online / Offline
+    async function toggleDutyStatus() {
+      const nextStatus = !isDutyOnline;
+      try {
+        const res = await fetch('/api/v1/rider/status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ isOnline: nextStatus }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          isDutyOnline = data.isOnline;
+          updateDutySwitchUI();
+          showToast(isDutyOnline ? 'You are now Online' : 'You are now Offline', isDutyOnline ? 'success' : 'info');
+          fetchRiderHome(true);
+        } else {
+          showToast(data.message || 'Failed to update duty status', 'error');
+        }
+      } catch (err) {
+        showToast('Network error updating status', 'error');
+      }
+    }
+
+    // Navigation & Tabs
+    function navigateTab(tab) {
+      document.querySelectorAll('.rider-nav-item').forEach(el => el.classList.remove('active'));
+      const activeTabEl = document.getElementById(`tab-${tab}`);
+      if (activeTabEl) activeTabEl.classList.add('active');
+
+      document.querySelectorAll('.rider-view').forEach(el => el.style.display = 'none');
+
+      if (tab === 'home') {
+        document.getElementById('view-home').style.display = 'flex';
+        fetchRiderHome(true);
+      } else if (tab === 'active') {
+        if (currentActiveOrderId) {
+          loadOrderDetail(currentActiveOrderId);
+        } else {
+          showToast('No active order currently in progress', 'info');
+          navigateTab('home');
+        }
+      } else if (tab === 'summary') {
+        document.getElementById('view-summary').style.display = 'flex';
+        loadRiderSummary();
+      } else if (tab === 'detail') {
+        document.getElementById('view-order-detail').style.display = 'flex';
+      } else if (tab === 'buying') {
+        document.getElementById('view-buying').style.display = 'flex';
+      } else if (tab === 'bill') {
+        document.getElementById('view-bill').style.display = 'flex';
+      } else if (tab === 'delivery') {
+        document.getElementById('view-delivery').style.display = 'flex';
+      }
+    }
+
+    // Previous known open orders count for sound alert
+    let previousOpenOrderIds = new Set();
+
+    // Fetch Home Data (Polls every 8s)
+    async function fetchRiderHome(immediate = false) {
+      try {
+        const res = await fetch('/api/v1/rider/home');
+        if (res.status === 401) {
           window.location.href = '/rider/login';
           return;
         }
         const data = await res.json();
-        if (data.rider) {
-          document.getElementById('rider-name-display').textContent = data.rider.name;
-          document.getElementById('rider-phone-display').textContent = `+91 ${data.rider.phone}`;
-          document.getElementById('val-cash-balance').textContent = `₹ ${Number(data.rider.cashBalance || 0).toFixed(2)}`;
-          document.getElementById('val-vehicle-num').textContent = data.rider.vehicleNumber || 'BR-46-A-1284';
-          document.getElementById('val-vehicle-type').textContent = data.rider.vehicleType || 'Two Wheeler';
+        if (!data.success) return;
+
+        isDutyOnline = data.isOnline;
+        updateDutySwitchUI();
+
+        // Update counts
+        document.getElementById('stat-orders-done').textContent = data.counts?.ordersDone ?? 0;
+        document.getElementById('stat-cash-balance').textContent = '₹ ' + (data.counts?.cashBalance ?? 0);
+        document.getElementById('stat-spent-today').textContent = '₹ ' + (data.counts?.spentToday ?? 0);
+        document.getElementById('stat-collected-today').textContent = '₹ ' + (data.counts?.collectedToday ?? 0);
+
+        // Check active order
+        if (data.activeOrder) {
+          currentActiveOrderId = data.activeOrder.id;
+          document.getElementById('banner-active-order').style.display = 'flex';
+          document.getElementById('banner-order-id').textContent = data.activeOrder.orderNumber;
+          document.getElementById('banner-order-status').textContent = data.activeOrder.status.replace(/_/g, ' ');
+          document.getElementById('banner-order-desc').textContent = `${data.activeOrder.deliveryName} • ${data.activeOrder.deliveryLandmark || data.activeOrder.deliveryAddress}`;
+        } else {
+          currentActiveOrderId = null;
+          document.getElementById('banner-active-order').style.display = 'none';
         }
+
+        // Render open orders if online
+        if (isDutyOnline) {
+          renderOpenOrders(data.openOrders || []);
+        }
+
       } catch (err) {
-        window.location.href = '/rider/login';
+        console.error('Home poll error:', err);
       }
     }
 
-    // Refresh Token demonstration
-    document.getElementById('btn-refresh-token').addEventListener('click', async () => {
-      const fb = document.getElementById('token-refresh-feedback');
-      fb.style.display = 'none';
+    function renderOpenOrders(ordersList) {
+      const container = document.getElementById('open-orders-list');
+      
+      if (!ordersList || ordersList.length === 0) {
+        container.innerHTML = `
+          <div class="rider-card" style="text-align: center; padding: 32px 16px; border-style: dashed;">
+            <div style="font-size: 32px; margin-bottom: 8px;">📡</div>
+            <h3 style="font-size: 17px; font-weight: 700; margin: 0 0 4px;">${t('noOrdersNow')}</h3>
+            <span style="font-size: 13px; color: #6B7280;">Auto-refreshing every 8 seconds</span>
+          </div>
+        `;
+        previousOpenOrderIds.clear();
+        return;
+      }
 
-      // Pull stored refresh token from localStorage or cookie
-      const storedRefresh = localStorage.getItem('zupit_rider_refresh_token') || 'demo_refresh_token';
+      // Check if new order arrived to trigger sound & vibrate
+      let hasNewOrder = false;
+      const currentIds = new Set(ordersList.map(o => o.id));
+      for (const id of currentIds) {
+        if (!previousOpenOrderIds.has(id)) {
+          hasNewOrder = true;
+          break;
+        }
+      }
+      if (hasNewOrder && previousOpenOrderIds.size > 0) {
+        playNewOrderChime();
+        showToast('New customer order available!', 'success');
+      }
+      previousOpenOrderIds = currentIds;
 
+      container.innerHTML = ordersList.map(o => `
+        <div class="open-order-card" id="open-order-${o.id}">
+          <div class="open-order-top">
+            <div>
+              <div class="open-order-area">${escapeHtml(o.area)}</div>
+              <div style="font-size: 14px; color: #6B7280; margin-top: 2px;">
+                ${escapeHtml(o.orderNumber)} • ${timeAgo(o.createdAt)}
+              </div>
+            </div>
+            <span class="open-order-distance-pill">
+              📍 ${escapeHtml(o.distance)}
+            </span>
+          </div>
+
+          <div class="open-order-meta-grid">
+            <span class="open-order-badge">
+              💊 ${o.itemCount} ${currentLang === 'hi' ? 'दवाइयां' : 'Medicines'}
+            </span>
+            ${o.hasPrescription ? `
+              <span class="open-order-badge rx">
+                📄 ${currentLang === 'hi' ? 'पर्चा संलग्न' : 'Prescription'}
+              </span>
+            ` : ''}
+          </div>
+
+          <button type="button" class="btn-rider-primary" onclick="acceptOrder('${o.id}')">
+            <span>${t('acceptOrder')}</span>
+          </button>
+        </div>
+      `).join('');
+    }
+
+    // Atomic Order Acceptance
+    async function acceptOrder(orderId) {
       try {
-        const res = await fetch('/api/v1/rider/auth/refresh-token', {
+        const btn = document.querySelector(`#open-order-${orderId} button`);
+        if (btn) {
+          btn.disabled = true;
+          btn.textContent = 'Accepting...';
+        }
+
+        const res = await fetch(`/api/v1/rider/orders/${orderId}/accept`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ refreshToken: storedRefresh }),
+        });
+
+        if (res.status === 409) {
+          showToast(t('takenByAnother'), 'error');
+          fetchRiderHome(true);
+          return;
+        }
+
+        const data = await res.json();
+        if (data.success) {
+          showToast('Order accepted!', 'success');
+          currentActiveOrderId = orderId;
+          loadOrderDetail(orderId);
+        } else {
+          showToast(data.message || 'Could not accept order', 'error');
+          fetchRiderHome(true);
+        }
+      } catch (err) {
+        showToast('Network error accepting order', 'error');
+      }
+    }
+
+    function resumeActiveOrder() {
+      if (currentActiveOrderId) {
+        loadOrderDetail(currentActiveOrderId);
+      }
+    }
+
+    // Load Order Detail
+    async function loadOrderDetail(orderId) {
+      try {
+        const res = await fetch(`/api/v1/rider/orders/${orderId}`);
+        const data = await res.json();
+        if (!data.success) {
+          showToast('Could not load order details', 'error');
+          return;
+        }
+
+        currentOrderData = data;
+        currentActiveOrderId = orderId;
+
+        // Route to the appropriate screen depending on current order status
+        const status = data.order.status;
+
+        if (status === 'buying') {
+          populateBuyingView(data);
+          navigateTab('buying');
+          return;
+        } else if (status === 'out_for_delivery') {
+          populateDeliveryView(data);
+          navigateTab('delivery');
+          return;
+        }
+
+        // Otherwise render Order Detail view
+        populateDetailView(data);
+        navigateTab('detail');
+
+      } catch (err) {
+        showToast('Error loading order', 'error');
+      }
+    }
+
+    function populateDetailView(data) {
+      const o = data.order;
+      document.getElementById('detail-order-number').textContent = o.orderNumber;
+      document.getElementById('detail-order-time').textContent = formatTime(o.createdAt);
+      document.getElementById('detail-status-pill').textContent = o.status.replace(/_/g, ' ');
+      document.getElementById('detail-status-pill').className = `status-pill status-${o.status}`;
+
+      document.getElementById('detail-customer-name').textContent = o.deliveryName;
+      document.getElementById('detail-customer-address').textContent = o.deliveryAddress;
+      document.getElementById('detail-customer-landmark').textContent = o.deliveryLandmark ? `Landmark: ${o.deliveryLandmark}` : '';
+
+      // Contact buttons
+      document.getElementById('btn-call-customer').href = `tel:${o.deliveryPhone}`;
+      const waPhone = o.deliveryPhone.replace(/\D/g, '').slice(-10);
+      document.getElementById('btn-wa-customer').href = `https://wa.me/91${waPhone}?text=Hello%20${encodeURIComponent(o.deliveryName)}%2C%20I%20am%20your%20Zupit%20delivery%20rider.`;
+
+      // Google Maps URL
+      const mapQuery = encodeURIComponent(`${o.deliveryAddress}, ${o.deliveryLandmark || ''}, Jamui`);
+      document.getElementById('btn-open-maps').href = `https://www.google.com/maps/search/?api=1&query=${mapQuery}`;
+
+      // Prescriptions
+      const rxSection = document.getElementById('detail-rx-section');
+      const rxGrid = document.getElementById('detail-rx-grid');
+      if (data.prescriptions && data.prescriptions.length > 0) {
+        rxSection.style.display = 'flex';
+        document.getElementById('detail-rx-count').textContent = `${data.prescriptions.length} photos`;
+        rxGrid.innerHTML = data.prescriptions.map(p => `
+          <div style="position: relative; cursor: pointer;" onclick="openRxLightbox('${escapeHtml(p.fileUrl)}')">
+            <img src="${escapeHtml(p.fileUrl)}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 1.5px solid #CBD5E1;" alt="Prescription">
+            <span style="position: absolute; bottom: 4px; right: 4px; background: rgba(0,0,0,0.6); color: #FFF; font-size: 11px; padding: 2px 4px; border-radius: 4px;">🔍</span>
+          </div>
+        `).join('');
+      } else {
+        rxSection.style.display = 'none';
+      }
+
+      // Medicines
+      const itemsList = document.getElementById('detail-items-list');
+      document.getElementById('detail-items-count').textContent = `${data.items.length} items`;
+      itemsList.innerHTML = data.items.map(item => `
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #F8FAFC; border-radius: 10px; border: 1px solid #E2E8F0;">
+          <div>
+            <div style="font-weight: 700; font-size: 16px; color: #111827;">${escapeHtml(item.name)}</div>
+            <div style="font-size: 14px; color: #64748B;">${item.strength ? escapeHtml(item.strength) : ''}</div>
+          </div>
+          <div style="font-size: 16px; font-weight: 800; color: #1D3F8F;">
+            Qty: ${item.quantity}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Start Buying
+    async function startBuyingMedicines() {
+      if (!currentActiveOrderId) return;
+      try {
+        const res = await fetch(`/api/v1/rider/orders/${currentActiveOrderId}/start-buying`, {
+          method: 'POST',
+        });
+        const data = await res.json();
+        if (data.success) {
+          loadOrderDetail(currentActiveOrderId);
+        } else {
+          showToast(data.message || 'Could not update status', 'error');
+        }
+      } catch (err) {
+        showToast('Network error', 'error');
+      }
+    }
+
+    // Buying View
+    function populateBuyingView(data) {
+      const o = data.order;
+      document.getElementById('btn-buying-call-customer').href = `tel:${o.deliveryPhone}`;
+      
+      // Suggested pharmacies
+      const chipsContainer = document.getElementById('pharmacy-suggestions');
+      chipsContainer.innerHTML = (data.suggestedPharmacies || []).map(p => `
+        <div class="pharmacy-chip" onclick="selectPharmacySuggestion('${escapeHtml(p)}')">
+          🏪 ${escapeHtml(p)}
+        </div>
+      `).join('');
+
+      // Items with Bought / Unavailable toggles
+      const itemsContainer = document.getElementById('buying-items-container');
+      itemsContainer.innerHTML = data.items.map(item => `
+        <div class="rider-card" style="padding: 12px; background: #F8FAFC;" id="item-card-${item.id}">
+          <div style="display: flex; align-items: baseline; justify-content: space-between;">
+            <div>
+              <div style="font-size: 17px; font-weight: 800; color: #111827;">${escapeHtml(item.name)}</div>
+              <div style="font-size: 14px; color: #64748B;">${item.strength || ''} • Qty: ${item.quantity}</div>
+            </div>
+            <span style="font-size: 12px; font-weight: 700; text-transform: uppercase;" id="item-status-pill-${item.id}">
+              ${item.status}
+            </span>
+          </div>
+
+          <div style="display: flex; gap: 8px; margin-top: 8px;">
+            <button type="button" class="item-toggle-btn ${item.status === 'bought' ? 'active-bought' : ''}" onclick="toggleItemStatus('${item.id}', 'bought')">
+              ✓ Bought
+            </button>
+            <button type="button" class="item-toggle-btn ${item.status === 'unavailable' ? 'active-unavailable' : ''}" onclick="toggleItemStatus('${item.id}', 'unavailable')">
+              ✕ Not available
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function selectPharmacySuggestion(name) {
+      document.getElementById('input-pharmacy-name').value = name;
+      document.getElementById('bill-pharmacy-input').value = name;
+    }
+
+    async function toggleItemStatus(itemId, newStatus) {
+      if (!currentActiveOrderId) return;
+      try {
+        const res = await fetch(`/api/v1/rider/orders/${currentActiveOrderId}/items/${itemId}/status`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: newStatus }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          const card = document.getElementById(`item-card-${itemId}`);
+          const boughtBtn = card.querySelectorAll('.item-toggle-btn')[0];
+          const unavailBtn = card.querySelectorAll('.item-toggle-btn')[1];
+
+          boughtBtn.className = `item-toggle-btn ${newStatus === 'bought' ? 'active-bought' : ''}`;
+          unavailBtn.className = `item-toggle-btn ${newStatus === 'unavailable' ? 'active-unavailable' : ''}`;
+          document.getElementById(`item-status-pill-${itemId}`).textContent = newStatus;
+        }
+      } catch (err) {
+        showToast('Error updating item', 'error');
+      }
+    }
+
+    function openBillScreen() {
+      // Sync pharmacy name if typed
+      const pharm = document.getElementById('input-pharmacy-name').value.trim();
+      if (pharm) {
+        document.getElementById('bill-pharmacy-input').value = pharm;
+      }
+      navigateTab('bill');
+      renderBillList();
+    }
+
+    // Bill Photo Compression & Upload
+    async function handleBillPhotoSelect(event) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      showToast('Compressing photo...', 'info');
+
+      try {
+        // Compress using HTML5 Canvas to max 1280px dimension JPEG
+        const compressedBlob = await compressImage(file, 1280, 0.8);
+        document.getElementById('bill-file-info').textContent = `${Math.round(compressedBlob.size / 1024)} KB`;
+
+        // Create local preview
+        const previewUrl = URL.createObjectURL(compressedBlob);
+        document.getElementById('bill-photo-preview-img').src = previewUrl;
+        document.getElementById('bill-photo-preview-container').style.display = 'flex';
+        document.getElementById('bill-upload-status').textContent = 'Uploading to server...';
+
+        // 1. Get presigned upload URL
+        const presignRes = await fetch('/api/v1/uploads/presign', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fileName: file.name || 'bill_photo.jpg',
+            mimeType: 'image/jpeg',
+            fileSize: compressedBlob.size,
+          }),
+        });
+        const presignData = await presignRes.json();
+        if (!presignData.success) {
+          throw new Error(presignData.message || 'Presign failed');
+        }
+
+        // 2. Put file to target URL
+        const uploadRes = await fetch(presignData.uploadUrl, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'image/jpeg' },
+          body: compressedBlob,
+        });
+        if (!uploadRes.ok) {
+          throw new Error('Upload request failed');
+        }
+
+        pendingBillPhotoKey = presignData.fileKey;
+        pendingBillPhotoUrl = presignData.publicUrl;
+        document.getElementById('bill-upload-status').textContent = '✓ Uploaded successfully';
+        showToast('Bill photo ready', 'success');
+
+      } catch (err) {
+        console.error('Bill upload error:', err);
+        showToast('Failed to upload photo: ' + err.message, 'error');
+        clearCurrentBillPhoto();
+      }
+    }
+
+    function clearCurrentBillPhoto() {
+      pendingBillPhotoKey = null;
+      pendingBillPhotoUrl = null;
+      document.getElementById('bill-camera-input').value = '';
+      document.getElementById('bill-photo-preview-container').style.display = 'none';
+      document.getElementById('bill-photo-preview-img').src = '';
+    }
+
+    function compressImage(file, maxDimension, quality) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          let width = img.width;
+          let height = img.height;
+          if (width > height) {
+            if (width > maxDimension) {
+              height = Math.round((height * maxDimension) / width);
+              width = maxDimension;
+            }
+          } else {
+            if (height > maxDimension) {
+              width = Math.round((width * maxDimension) / height);
+              height = maxDimension;
+            }
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          canvas.toBlob((blob) => {
+            if (blob) resolve(blob);
+            else reject(new Error('Canvas blob failed'));
+          }, 'image/jpeg', quality);
+        };
+        img.onerror = reject;
+        img.src = URL.createObjectURL(file);
+      });
+    }
+
+    // Save Bill to Order
+    async function saveCurrentBillToList() {
+      if (!currentActiveOrderId) return;
+      const amountVal = parseFloat(document.getElementById('bill-amount-input').value);
+      const pharmacy = document.getElementById('bill-pharmacy-input').value.trim() || 'Jan Aushadhi Kendra';
+
+      if (isNaN(amountVal) || amountVal <= 0) {
+        showToast('Please enter a valid bill amount', 'error');
+        return;
+      }
+
+      if (!pendingBillPhotoUrl) {
+        showToast('Please take or upload a bill photo first', 'error');
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/v1/rider/orders/${currentActiveOrderId}/bills`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            pharmacyName: pharmacy,
+            billImageUrl: pendingBillPhotoUrl,
+            amount: amountVal,
+          }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Bill added!', 'success');
+          // Reset form fields
+          clearCurrentBillPhoto();
+          document.getElementById('bill-amount-input').value = '';
+          // Refresh order data
+          currentOrderData.bills = data.allBills;
+          renderBillList();
+        } else {
+          showToast(data.message || 'Error adding bill', 'error');
+        }
+      } catch (err) {
+        showToast('Network error saving bill', 'error');
+      }
+    }
+
+    function renderBillList() {
+      const bills = currentOrderData?.bills || [];
+      const container = document.getElementById('card-bills-list');
+      const listEl = document.getElementById('bills-items-list');
+
+      if (bills.length === 0) {
+        container.style.display = 'none';
+        document.getElementById('card-threshold-warning').style.display = 'none';
+        return;
+      }
+
+      container.style.display = 'flex';
+      document.getElementById('badge-bill-count').textContent = `${bills.length} bills`;
+
+      let total = 0;
+      listEl.innerHTML = bills.map(b => {
+        const amt = Number(b.amount);
+        total += amt;
+        return `
+          <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: #F8FAFC; border-radius: 10px; border: 1px solid #E2E8F0;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <img src="${escapeHtml(b.billImageUrl)}" style="width: 48px; height: 48px; object-fit: cover; border-radius: 6px; cursor: pointer;" onclick="openRxLightbox('${escapeHtml(b.billImageUrl)}')">
+              <div>
+                <div style="font-weight: 700; font-size: 15px;">${escapeHtml(b.pharmacyName || 'Pharmacy')}</div>
+                <div style="font-size: 13px; color: #64748B;">Tap photo to view</div>
+              </div>
+            </div>
+            <div style="text-align: right;">
+              <div style="font-size: 18px; font-weight: 800; color: #111827;">₹ ${amt.toFixed(2)}</div>
+              <button type="button" style="background: none; border: none; color: #DC2626; font-size: 12px; font-weight: 600; cursor: pointer;" onclick="deleteBill('${b.id}')">Delete</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById('val-total-bills-sum').textContent = `₹ ${total.toFixed(2)}`;
+
+      // Threshold Warning
+      const threshold = currentOrderData?.settings?.bill_confirm_threshold || 2000;
+      document.getElementById('val-threshold-limit').textContent = threshold;
+      const warningEl = document.getElementById('card-threshold-warning');
+      if (total > threshold) {
+        warningEl.style.display = 'flex';
+      } else {
+        warningEl.style.display = 'none';
+      }
+    }
+
+    async function deleteBill(billId) {
+      if (!currentActiveOrderId) return;
+      try {
+        const res = await fetch(`/api/v1/rider/orders/${currentActiveOrderId}/bills/${billId}`, {
+          method: 'DELETE',
+        });
+        const data = await res.json();
+        if (data.success) {
+          currentOrderData.bills = data.allBills;
+          renderBillList();
+        }
+      } catch (err) {
+        showToast('Error deleting bill', 'error');
+      }
+    }
+
+    // Submit Bills & Move to Out for Delivery
+    async function submitBillsAndGoDelivery() {
+      if (!currentActiveOrderId) return;
+      const bills = currentOrderData?.bills || [];
+      if (bills.length === 0) {
+        showToast('Please upload at least one bill photo and amount', 'error');
+        return;
+      }
+
+      const total = bills.reduce((sum, b) => sum + Number(b.amount), 0);
+      const threshold = currentOrderData?.settings?.bill_confirm_threshold || 2000;
+      const confirmedCheck = document.getElementById('chk-customer-confirmed-call').checked;
+
+      if (total > threshold && !confirmedCheck) {
+        showToast('Customer call confirmation checkbox is required for bills exceeding threshold', 'error');
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/v1/rider/orders/${currentActiveOrderId}/submit-bills`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ customerConfirmedByCall: confirmedCheck }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Order is now Out for Delivery!', 'success');
+          loadOrderDetail(currentActiveOrderId);
+        } else {
+          showToast(data.message || 'Error submitting bills', 'error');
+        }
+      } catch (err) {
+        showToast('Network error submitting bills', 'error');
+      }
+    }
+
+    // Delivery View
+    function populateDeliveryView(data) {
+      const o = data.order;
+      document.getElementById('delivery-customer-name').textContent = o.deliveryName;
+      document.getElementById('delivery-customer-address').textContent = `${o.deliveryAddress} (Landmark: ${o.deliveryLandmark || 'N/A'})`;
+      document.getElementById('btn-delivery-call').href = `tel:${o.deliveryPhone}`;
+
+      const mapQuery = encodeURIComponent(`${o.deliveryAddress}, ${o.deliveryLandmark || ''}, Jamui`);
+      document.getElementById('btn-delivery-maps').href = `https://www.google.com/maps/search/?api=1&query=${mapQuery}`;
+
+      const finalAmt = o.finalAmount || o.totalAmount || 0;
+      document.getElementById('delivery-amount-to-collect').textContent = `₹ ${finalAmt}`;
+
+      // Check online payment option
+      const radioOnline = document.getElementById('radio-online-payment');
+      const lblOnline = document.getElementById('lbl-online-payment');
+      if (o.paymentStatus === 'paid') {
+        radioOnline.disabled = false;
+        radioOnline.checked = true;
+        lblOnline.style.opacity = '1';
+        document.getElementById('txt-online-pay-subtext').textContent = '✓ Payment confirmed online by customer';
+      } else {
+        radioOnline.disabled = true;
+        radioOnline.checked = false;
+        lblOnline.style.opacity = '0.6';
+        document.getElementById('txt-online-pay-subtext').textContent = 'Online payment not completed yet (Collect cash)';
+      }
+
+      // Reset code inputs
+      for (let i = 1; i <= 4; i++) {
+        document.getElementById(`code-box-${i}`).value = '';
+      }
+    }
+
+    // 4-Digit Code Box Input Auto-Focus
+    function handleCodeInput(index) {
+      const curr = document.getElementById(`code-box-${index}`);
+      if (curr.value && index < 4) {
+        document.getElementById(`code-box-${index + 1}`).focus();
+      }
+    }
+
+    function handleCodeKeydown(event, index) {
+      if (event.key === 'Backspace') {
+        const curr = document.getElementById(`code-box-${index}`);
+        if (!curr.value && index > 1) {
+          document.getElementById(`code-box-${index - 1}`).focus();
+        }
+      }
+    }
+
+    // Complete Delivery
+    async function verifyAndDeliverOrder() {
+      if (!currentActiveOrderId) return;
+
+      const code = [1, 2, 3, 4].map(i => document.getElementById(`code-box-${i}`).value.trim()).join('');
+      if (code.length !== 4) {
+        showToast('Please enter all 4 digits of the delivery code', 'error');
+        return;
+      }
+
+      const methodRadio = document.querySelector('input[name="payment-collect-method"]:checked');
+      const paymentMethod = methodRadio ? methodRadio.value : 'cod';
+
+      try {
+        const res = await fetch(`/api/v1/rider/orders/${currentActiveOrderId}/verify-delivery`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            deliveryCode: code,
+            paymentMethodSelected: paymentMethod,
+          }),
         });
 
         const data = await res.json();
-        if (res.ok && data.success) {
-          if (data.refreshToken) {
-            localStorage.setItem('zupit_rider_refresh_token', data.refreshToken);
-          }
-          remainingSeconds = 15 * 60; // Reset 15 mins
-          fb.style.color = 'var(--color-success)';
-          fb.textContent = I18N[currentLang].tokenRefreshedMsg;
-          fb.style.display = 'block';
+        if (data.success) {
+          document.getElementById('modal-success').style.display = 'flex';
         } else {
-          fb.style.color = 'var(--color-warning)';
-          fb.textContent = data.message || 'Session refresh simulation completed.';
-          fb.style.display = 'block';
+          showToast(data.message || 'Incorrect delivery code', 'error');
+          if (data.attemptsRemaining !== undefined) {
+            document.getElementById('txt-code-attempts-info').textContent = `${data.attemptsRemaining} attempt(s) remaining`;
+          }
         }
       } catch (err) {
-        fb.style.color = 'var(--color-error)';
-        fb.textContent = 'Network error during token refresh.';
-        fb.style.display = 'block';
+        showToast('Network error verifying delivery code', 'error');
       }
-    });
+    }
 
-    // Logout
-    document.getElementById('btn-rider-logout').addEventListener('click', () => {
-      document.cookie = "rider_access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-      localStorage.removeItem('zupit_rider_refresh_token');
+    function closeSuccessModalAndGoHome() {
+      document.getElementById('modal-success').style.display = 'none';
+      currentActiveOrderId = null;
+      navigateTab('summary');
+    }
+
+    // Fail Delivery
+    function openFailDeliveryModal() {
+      document.getElementById('modal-fail-delivery').style.display = 'flex';
+    }
+
+    function closeFailDeliveryModal() {
+      document.getElementById('modal-fail-delivery').style.display = 'none';
+    }
+
+    async function submitFailDelivery() {
+      if (!currentActiveOrderId) return;
+      const selectedReason = document.querySelector('input[name="fail-reason"]:checked')?.value || 'Customer unreachable';
+
+      try {
+        const res = await fetch(`/api/v1/rider/orders/${currentActiveOrderId}/fail-delivery`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reason: selectedReason }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          closeFailDeliveryModal();
+          showToast('Order marked as delivery failed', 'info');
+          currentActiveOrderId = null;
+          navigateTab('home');
+        } else {
+          showToast(data.message || 'Failed to update order', 'error');
+        }
+      } catch (err) {
+        showToast('Network error', 'error');
+      }
+    }
+
+    // Summary View
+    async function loadRiderSummary() {
+      try {
+        const res = await fetch('/api/v1/rider/summary');
+        const data = await res.json();
+        if (!data.success) return;
+
+        const sum = data.summary;
+        document.getElementById('sum-val-orders-done').textContent = sum.ordersDone;
+        document.getElementById('sum-val-balance').textContent = `₹ ${sum.balance}`;
+        document.getElementById('sum-val-spent').textContent = `₹ ${sum.moneySpent}`;
+        document.getElementById('sum-val-collected').textContent = `₹ ${sum.cashCollected}`;
+
+        // Orders list
+        const ordersEl = document.getElementById('sum-orders-list');
+        if (sum.todayOrders.length === 0) {
+          ordersEl.innerHTML = '<span style="font-size: 14px; color: #64748B;">No orders handled today yet.</span>';
+        } else {
+          ordersEl.innerHTML = sum.todayOrders.map(o => `
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: #F8FAFC; border-radius: 10px; border: 1px solid #E2E8F0;">
+              <div>
+                <div style="font-size: 15px; font-weight: 700; color: #111827;">${escapeHtml(o.orderNumber)} • ${escapeHtml(o.deliveryName)}</div>
+                <div style="font-size: 13px; color: #64748B;">${escapeHtml(o.deliveryLandmark || o.deliveryAddress)}</div>
+              </div>
+              <div style="text-align: right;">
+                <span class="status-pill status-${o.status}" style="font-size: 11px;">${o.status}</span>
+                <div style="font-size: 14px; font-weight: 700; margin-top: 2px;">₹ ${o.finalAmount || o.totalAmount || 0}</div>
+              </div>
+            </div>
+          `).join('');
+        }
+
+        // Ledger list
+        const ledgerEl = document.getElementById('sum-ledger-list');
+        if (sum.ledger.length === 0) {
+          ledgerEl.innerHTML = '<span style="font-size: 14px; color: #64748B;">No ledger transactions today.</span>';
+        } else {
+          ledgerEl.innerHTML = sum.ledger.map(entry => {
+            const isPos = Number(entry.amount) > 0;
+            return `
+              <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #F8FAFC; border-radius: 8px; border: 1px solid #E2E8F0;">
+                <div>
+                  <div style="font-size: 14px; font-weight: 700;">${entry.type.replace(/_/g, ' ')}</div>
+                  <div style="font-size: 12px; color: #64748B;">${formatTime(entry.createdAt)} • ${escapeHtml(entry.notes || '')}</div>
+                </div>
+                <div style="text-align: right;">
+                  <div style="font-size: 15px; font-weight: 800; color: ${isPos ? '#16A34A' : '#DC2626'};">
+                    ${isPos ? '+' : ''}₹ ${entry.amount}
+                  </div>
+                  <div style="font-size: 12px; color: #64748B;">Bal: ₹ ${entry.balanceAfter}</div>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+
+      } catch (err) {
+        showToast('Error loading summary', 'error');
+      }
+    }
+
+    // Prescription Pinch-Zoom Lightbox
+    function openRxLightbox(url) {
+      const modal = document.getElementById('rx-lightbox');
+      const img = document.getElementById('lightbox-img');
+      img.src = url;
+      currentLightboxScale = 1;
+      img.style.transform = `scale(1)`;
+      modal.style.display = 'flex';
+      setupLightboxGestures();
+    }
+
+    function closeRxLightbox() {
+      document.getElementById('rx-lightbox').style.display = 'none';
+    }
+
+    function zoomLightbox(delta) {
+      currentLightboxScale = Math.max(0.5, Math.min(4, currentLightboxScale + delta));
+      document.getElementById('lightbox-img').style.transform = `scale(${currentLightboxScale})`;
+    }
+
+    function resetLightboxZoom() {
+      currentLightboxScale = 1;
+      document.getElementById('lightbox-img').style.transform = `scale(1)`;
+    }
+
+    function setupLightboxGestures() {
+      const viewport = document.getElementById('lightbox-viewport');
+      let initialDist = 0;
+
+      viewport.ontouchstart = (e) => {
+        if (e.touches.length === 2) {
+          initialDist = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+          );
+        }
+      };
+
+      viewport.ontouchmove = (e) => {
+        if (e.touches.length === 2 && initialDist > 0) {
+          const currentDist = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+          );
+          const ratio = currentDist / initialDist;
+          currentLightboxScale = Math.max(0.5, Math.min(4, currentLightboxScale * ratio));
+          document.getElementById('lightbox-img').style.transform = `scale(${currentLightboxScale})`;
+          initialDist = currentDist;
+        }
+      };
+    }
+
+    // Sign out
+    function logoutRider() {
+      document.cookie = 'rider_access_token=; Max-Age=0; path=/;';
       window.location.href = '/rider/login';
-    });
+    }
 
-    fetchRiderMe();
+    // Helpers
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function formatTime(dateStr) {
+      if (!dateStr) return '';
+      const d = new Date(dateStr);
+      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function timeAgo(dateStr) {
+      if (!dateStr) return '';
+      const diffMins = Math.floor((Date.now() - new Date(dateStr).getTime()) / 60000);
+      if (diffMins < 1) return 'Just now';
+      if (diffMins < 60) return `${diffMins}m ago`;
+      return `${Math.floor(diffMins / 60)}h ago`;
+    }
+
+    // Init & Polling
+    window.addEventListener('DOMContentLoaded', () => {
+      applyTranslations();
+      fetchRiderHome(true);
+
+      // Start 8s poll
+      pollInterval = setInterval(() => {
+        if (document.visibilityState !== 'hidden' && document.getElementById('view-home').style.display !== 'none') {
+          fetchRiderHome(false);
+        }
+      }, 8000);
+    });
   </script>
 </body>
 </html>

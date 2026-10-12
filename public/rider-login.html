@@ -449,6 +449,17 @@
         startResendTimer(data.resendAvailableInSeconds || 30);
         focusFirstOtpBox();
 
+        // If devOtp is provided, auto-fill the boxes for instant testing
+        if (data.devOtp) {
+          const digits = String(data.devOtp).split('');
+          digits.forEach((digit, i) => {
+            if (otpInputs[i]) {
+              otpInputs[i].value = digit;
+              otpInputs[i].classList.add('filled');
+            }
+          });
+        }
+
       } catch (err) {
         btn.disabled = false;
         document.getElementById('btn-send-otp-text').textContent = I18N[currentLang].sendOtp;

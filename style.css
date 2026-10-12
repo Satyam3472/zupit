@@ -2232,3 +2232,487 @@ body * {
   max-width: 100%;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
+
+/* ==========================================================================
+   Rider App (Mobile 360px, Outdoor High Contrast)
+   - Tap targets: 48px+
+   - Primary buttons: 56px
+   - Body text: 16px+
+   - Amounts & OTP: 28px+
+   ========================================================================== */
+
+.rider-app-wrapper {
+  max-width: 480px;
+  width: 100%;
+  margin: 0 auto;
+  min-height: 100vh;
+  background-color: #F8F9FA;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #111827;
+}
+
+.rider-header {
+  background-color: #FFFFFF;
+  border-bottom: 2px solid #E5E7EB;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 90;
+}
+
+.rider-content {
+  flex: 1;
+  padding: 18px 16px 90px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.rider-view {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+/* 56px Online / Offline Switch */
+.rider-duty-switch {
+  height: 56px;
+  min-height: 56px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+  border: 2px solid;
+}
+
+.rider-duty-switch.offline {
+  background-color: #F3F4F6;
+  border-color: #D1D5DB;
+  color: #4B5563;
+}
+
+.rider-duty-switch.online {
+  background-color: #DCFCE7;
+  border-color: #16A34A;
+  color: #15803D;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15);
+}
+
+.rider-duty-pill {
+  height: 42px;
+  min-width: 100px;
+  padding: 0 16px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+
+.rider-duty-switch.offline .rider-duty-pill {
+  background-color: #E5E7EB;
+  color: #374151;
+}
+
+.rider-duty-switch.online .rider-duty-pill {
+  background-color: #16A34A;
+  color: #FFFFFF;
+}
+
+/* Primary Action Buttons: 56px height, 18px bold text */
+.btn-rider-primary {
+  height: 56px;
+  min-height: 56px;
+  width: 100%;
+  border-radius: 14px;
+  background-color: #1D3F8F;
+  color: #FFFFFF;
+  border: none;
+  font-size: 18px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.05s ease;
+  padding: 0 20px;
+  box-shadow: 0 2px 4px rgba(29, 63, 143, 0.2);
+}
+
+.btn-rider-primary:hover:not(:disabled) {
+  background-color: #152E6B;
+}
+
+.btn-rider-primary:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.btn-rider-primary:disabled {
+  background-color: #9CA3AF;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.btn-rider-secondary {
+  height: 52px;
+  min-height: 48px;
+  width: 100%;
+  border-radius: 14px;
+  background-color: #FFFFFF;
+  color: #1D3F8F;
+  border: 2px solid #1D3F8F;
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  padding: 0 16px;
+}
+
+.btn-rider-danger-outline {
+  height: 50px;
+  min-height: 48px;
+  width: 100%;
+  border-radius: 14px;
+  background-color: #FFFFFF;
+  color: #DC2626;
+  border: 2px solid #FCA5A5;
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-rider-danger-outline:hover {
+  background-color: #FEF2F2;
+  border-color: #DC2626;
+}
+
+/* Outdoor-use High-Contrast Cards */
+.rider-card {
+  background-color: #FFFFFF;
+  border: 1.5px solid #D0D5DD;
+  border-radius: 16px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.05);
+}
+
+.rider-stat-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.rider-stat-card {
+  background-color: #FFFFFF;
+  border: 1.5px solid #D0D5DD;
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rider-stat-num {
+  font-size: 24px;
+  font-weight: 800;
+  color: #111827;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Open Order Cards */
+.open-order-card {
+  background-color: #FFFFFF;
+  border: 2px solid #D0D5DD;
+  border-radius: 16px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.open-order-card:hover {
+  border-color: #1D3F8F;
+}
+
+.open-order-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.open-order-area {
+  font-size: 19px;
+  font-weight: 800;
+  color: #111827;
+  line-height: 1.3;
+}
+
+.open-order-distance-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #EEF4FF;
+  color: #1D3F8F;
+  border: 1px solid #C7D7FE;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+.open-order-meta-grid {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 15px;
+  color: #4B5563;
+}
+
+.open-order-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background-color: #F3F4F6;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.open-order-badge.rx {
+  background-color: #FFF7ED;
+  border-color: #FED7AA;
+  color: #C2410C;
+}
+
+/* 4-digit Code Verification Boxes (56x64px, 32px digits) */
+.rider-code-grid {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 12px 0;
+}
+
+.rider-code-box {
+  width: 56px;
+  height: 64px;
+  border-radius: 12px;
+  border: 2px solid #D0D5DD;
+  background-color: #FFFFFF;
+  font-size: 32px;
+  font-weight: 700;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  color: #1D3F8F;
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.rider-code-box:focus {
+  border-color: #1D3F8F;
+  box-shadow: 0 0 0 3px rgba(29, 63, 143, 0.2);
+}
+
+/* Large Amount Display */
+.rider-amount-display {
+  font-size: 36px;
+  font-weight: 800;
+  color: #1D3F8F;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.rider-amount-input {
+  font-size: 32px;
+  font-weight: 800;
+  color: #111827;
+  font-variant-numeric: tabular-nums;
+  border: 2px solid #D0D5DD;
+  border-radius: 12px;
+  padding: 10px 14px;
+  width: 100%;
+  outline: none;
+  background-color: #FFFFFF;
+}
+
+.rider-amount-input:focus {
+  border-color: #1D3F8F;
+  box-shadow: 0 0 0 3px rgba(29, 63, 143, 0.15);
+}
+
+/* Pharmacy suggestion chips */
+.pharmacy-chip-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.pharmacy-chip {
+  min-height: 44px;
+  padding: 8px 14px;
+  border-radius: 9999px;
+  background-color: #F1F4F9;
+  border: 1.5px solid #D0D5DD;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1D3F8F;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.pharmacy-chip:hover, .pharmacy-chip:active {
+  background-color: #EEF4FF;
+  border-color: #1D3F8F;
+}
+
+/* Fullscreen Pinch-Zoom Viewer for Prescriptions */
+.rider-lightbox-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background-color: rgba(10, 15, 25, 0.95);
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  touch-action: none;
+}
+
+.rider-lightbox-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #FFFFFF;
+  margin-bottom: 12px;
+}
+
+.rider-lightbox-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rider-tool-btn {
+  min-width: 48px;
+  min-height: 48px;
+  border-radius: 10px;
+  background-color: rgba(255, 255, 255, 0.15);
+  color: #FFFFFF;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.rider-tool-btn:active {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+.rider-lightbox-viewport {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  touch-action: none;
+}
+
+.rider-lightbox-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  transition: transform 0.1s ease-out;
+  transform-origin: center center;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* Bottom Tab Navigation Bar */
+.rider-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: #FFFFFF;
+  border-top: 2px solid #E5E7EB;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  height: 68px;
+  z-index: 80;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.rider-nav-item {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: #6B7280;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  background: none;
+  cursor: pointer;
+  min-height: 48px;
+}
+
+.rider-nav-item.active {
+  color: #1D3F8F;
+  font-weight: 700;
+}
+
+.rider-nav-item.active svg {
+  stroke: #1D3F8F;
+}

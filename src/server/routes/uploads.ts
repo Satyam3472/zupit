@@ -39,16 +39,21 @@ if (!fs.existsSync(UPLOAD_DIR)) {
 router.post('/presign', async (req: Request, res: Response): Promise<void> => {
   const clientIp = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || '127.0.0.1';
   
-  // Rate limit: 10 per hour per IP (3600 seconds)
-  const rl = await rateLimit(`upload_presign:${clientIp}`, 10, 3600);
-  if (!rl.success) {
-    res.status(429).json({
-      success: false,
-      error: 'RATE_LIMIT_EXCEEDED',
-      message: 'Upload rate limit reached (10 per hour). Please try again later.',
-      resetTime: rl.resetTime,
-    });
-    return;
+  // Check if authenticated rider or admin (exempt from guest IP limit)
+  const isRiderOrAdmin = Boolean(req.cookies?.rider_access_token || req.cookies?.admin_token || req.headers.authorization);
+  
+  if (!isRiderOrAdmin) {
+    // Rate limit for guests: 10 per hour per IP (3600 seconds)
+    const rl = await rateLimit(`upload_presign:${clientIp}`, 10, 3600);
+    if (!rl.success) {
+      res.status(429).json({
+        success: false,
+        error: 'RATE_LIMIT_EXCEEDED',
+        message: 'Upload rate limit reached (10 per hour). Please try again later.',
+        resetTime: rl.resetTime,
+      });
+      return;
+    }
   }
 
   const parsed = PresignSchema.safeParse(req.body);
