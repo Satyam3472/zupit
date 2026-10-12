@@ -8,6 +8,7 @@ import authRiderRouter from './routes/authRider.js';
 import settingsRouter from './routes/settings.js';
 import uploadsRouter from './routes/uploads.js';
 import ordersRouter from './routes/orders.js';
+import trackRouter from './routes/track.js';
 import { protectAdminPages, protectRiderPages } from './middleware/auth.js';
 
 export function createApp() {
@@ -54,8 +55,11 @@ export function createApp() {
   // - Uploads: /api/v1/uploads/presign, /api/v1/uploads/file/:fileKey
   app.use('/api/v1/uploads', uploadsRouter);
 
-  // - Orders: POST /api/v1/orders, GET /api/v1/orders/track/:trackingToken
+  // - Orders: POST /api/v1/orders
   app.use('/api/v1/orders', ordersRouter);
+
+  // - Guest Tracking: /api/v1/track/:token, /api/v1/track/lookup, /api/v1/track/:token/cancel, /api/v1/track/:token/item-decision, /api/v1/track/:token/rating
+  app.use('/api/v1/track', trackRouter);
 
   // - Public config & Admin settings: /api/v1/public/config, /api/v1/admin/settings, /api/v1/admin/audit-logs
   app.use('/api/v1', settingsRouter);
@@ -65,7 +69,7 @@ export function createApp() {
   app.use(express.static(rootDir));
 
   // 6. Customer App routes
-  app.get(['/', '/order/placed'], (_req: Request, res: Response) => {
+  app.get(['/', '/order/placed', '/track', '/track/:token'], (_req: Request, res: Response) => {
     res.sendFile(path.join(rootDir, 'index.html'));
   });
 

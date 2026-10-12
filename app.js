@@ -119,10 +119,16 @@ const I18N = {
     billAmountLabel: "Total bill amount to pay",
     billPhotoTapText: "Tap to view pharmacy bill photo",
     btnPayNow: "Pay now",
-    payCodToRider: "Pay ₹ {amount} in cash to the rider",
+    payCodToRider: "Pay ₹{amount} in cash to the rider",
 
-    deliveryCodeTitle: "Tell this code to the rider:",
+    deliveryCodeTitle: "Tell this code to the rider",
     deliveryCodeHelper: "Rider will verify this 4-digit code at delivery",
+    updatedJustNow: "Updated just now",
+
+    trackNotFoundTitle: "Order Not Found",
+    trackNotFoundMsg: "We could not find this order. Check the number and try again.",
+    btnTrackAnother: "Track order",
+    btnHome: "Home",
 
     orderDetailsTitle: "Order details",
     cancelOrderLink: "Cancel order",
@@ -133,10 +139,13 @@ const I18N = {
 
     // Screen 5: Item Not Available
     unavailableTitle: "Item not available at pharmacy",
-    unavailableNotice: "Pantoprazole 40 mg was not available at the pharmacy.",
-    unavailableChoiceSkip: "Skip it (deliver remaining medicines)",
-    unavailableChoiceCall: "Call me (to discuss alternatives)",
+    unavailableNotice: "An item was not available at the pharmacy.",
+    unavailableChoiceSkip: "Skip it",
+    unavailableChoiceCall: "Call me",
     unavailableChoiceCancel: "Cancel order",
+    btnSkipItem: "Skip it",
+    btnCallMe: "Call me",
+    btnCancelOrder: "Cancel order",
 
     // Screen 6: Payment
     paymentHeaderTitle: "Pay Pharmacy Bill",
@@ -284,10 +293,16 @@ const I18N = {
     billAmountLabel: "भुगतान योग्य कुल बिल राशि",
     billPhotoTapText: "पक्का बिल देखने के लिए फोटो पर टैप करें",
     btnPayNow: "अभी भुगतान करें",
-    payCodToRider: "राइडर को ₹ {amount} नकद दें",
+    payCodToRider: "राइडर को ₹{amount} नकद दें",
 
-    deliveryCodeTitle: "राइडर को यह कोड बताएं:",
+    deliveryCodeTitle: "राइडर को यह कोड बताएं",
     deliveryCodeHelper: "राइडर डिलीवरी के समय इस 4 अंकों के कोड की पुष्टि करेगा",
+    updatedJustNow: "अभी अपडेट हुआ",
+
+    trackNotFoundTitle: "ऑर्डर नहीं मिला",
+    trackNotFoundMsg: "हमें यह ऑर्डर नहीं मिला। नंबर जांचें और पुनः प्रयास करें।",
+    btnTrackAnother: "ऑर्डर ट्रैक करें",
+    btnHome: "होम",
 
     orderDetailsTitle: "ऑर्डर का विवरण",
     cancelOrderLink: "ऑर्डर रद्द करें",
@@ -297,11 +312,14 @@ const I18N = {
     yesCancelBtn: "हाँ, ऑर्डर रद्द करें",
 
     // Screen 5: Item Not Available
-    unavailableTitle: "दवा उपलब्ध नहीं है",
-    unavailableNotice: "दवा की दुकान पर पैंटोप्राजोल 40 मिलीग्राम उपलब्ध नहीं थी।",
-    unavailableChoiceSkip: "इसे छोड़ें (बाकी उपलब्ध दवाइयां लाएं)",
-    unavailableChoiceCall: "मुझे कॉल करें (विकल्प पूछने के लिए)",
+    unavailableTitle: "दवा दुकान पर उपलब्ध नहीं है",
+    unavailableNotice: "दवा की दुकान पर एक दवा उपलब्ध नहीं थी।",
+    unavailableChoiceSkip: "दवा छोड़ें",
+    unavailableChoiceCall: "मुझे कॉल करें",
     unavailableChoiceCancel: "ऑर्डर रद्द करें",
+    btnSkipItem: "दवा छोड़ें",
+    btnCallMe: "मुझे कॉल करें",
+    btnCancelOrder: "ऑर्डर रद्द करें",
 
     // Screen 6: Payment
     paymentHeaderTitle: "दवा बिल का भुगतान",
@@ -413,10 +431,7 @@ const ASSETS = {
 document.addEventListener('DOMContentLoaded', () => {
   initStorage();
   bindGlobalEvents();
-
-  // Route directly if URL is /order/placed
-  const initialScreen = window.location.pathname === '/order/placed' ? 2 : 1;
-  navigateToScreen(initialScreen);
+  handleRoute();
   applyLanguage(AppState.lang);
 });
 
@@ -438,9 +453,12 @@ function initStorage() {
   if (recentOrderRaw) {
     try {
       const recent = JSON.parse(recentOrderRaw);
-      if (recent.orderNumber) {
-        AppState.activeOrder.orderId = recent.orderNumber;
+      if (recent && (recent.orderNumber || recent.orderId)) {
+        AppState.activeOrder.orderId = recent.orderNumber || recent.orderId;
+        AppState.activeOrder.orderNumber = recent.orderNumber || recent.orderId;
         AppState.activeOrder.trackingToken = recent.trackingToken || "";
+        if (recent.phone) AppState.activeOrder.deliveryPhone = recent.phone;
+        if (recent.address) AppState.activeOrder.deliveryAddress = recent.address;
       }
     } catch (e) {
       console.warn("Recent order parse error", e);
@@ -471,7 +489,10 @@ function bindGlobalEvents() {
     window.history.pushState({}, '', '/');
     navigateToScreen(1);
   });
-  document.getElementById('nav-track-btn').addEventListener('click', () => navigateToScreen(3));
+  document.getElementById('nav-track-btn').addEventListener('click', () => {
+    window.history.pushState({}, '', '/track');
+    navigateToScreen(3);
+  });
 
   // Segmented Mode Control (Screen 1)
   document.getElementById('seg-type-btn').addEventListener('click', () => switchInputMode('type'));
@@ -514,13 +535,7 @@ function bindGlobalEvents() {
   document.getElementById('btn-returning-change').addEventListener('click', dismissReturningCustomerCard);
 
   // History Popstate Handling
-  window.addEventListener('popstate', () => {
-    if (window.location.pathname === '/order/placed') {
-      navigateToScreen(2);
-    } else {
-      navigateToScreen(1);
-    }
-  });
+  window.addEventListener('popstate', handleRoute);
 
   // Online / Offline Listeners
   window.addEventListener('online', () => {
@@ -534,8 +549,15 @@ function bindGlobalEvents() {
 
   // Screen 2 Buttons
   document.getElementById('btn-track-placed-order').addEventListener('click', () => {
-    AppState.trackingState = 'placed';
-    navigateToScreen(4);
+    const token = AppState.activeOrder.trackingToken;
+    if (token) {
+      window.history.pushState({}, '', `/track/${token}`);
+      navigateToScreen(4);
+      fetchTrackingData(token);
+    } else {
+      window.history.pushState({}, '', '/track');
+      navigateToScreen(3);
+    }
   });
   document.getElementById('btn-placed-call-us').addEventListener('click', () => {
     window.location.href = "tel:+916207856200";
@@ -544,9 +566,40 @@ function bindGlobalEvents() {
   // Screen 3 Lookup Form
   document.getElementById('btn-track-lookup-submit').addEventListener('click', handleTrackLookup);
   document.getElementById('recent-order-tappable-card').addEventListener('click', () => {
-    navigateToScreen(4);
+    const token = AppState.activeOrder.trackingToken;
+    if (token) {
+      window.history.pushState({}, '', `/track/${token}`);
+      navigateToScreen(4);
+      fetchTrackingData(token);
+    } else {
+      if (AppState.activeOrder.orderId) {
+        document.getElementById('field-track-id').value = AppState.activeOrder.orderId;
+      }
+      if (AppState.activeOrder.deliveryPhone || AppState.mobileNumber) {
+        document.getElementById('field-track-mobile').value = (AppState.activeOrder.deliveryPhone || AppState.mobileNumber).slice(-10);
+      }
+    }
   });
-  document.getElementById('btn-empty-place-order').addEventListener('click', () => navigateToScreen(1));
+  document.getElementById('btn-empty-place-order').addEventListener('click', () => {
+    window.history.pushState({}, '', '/');
+    navigateToScreen(1);
+  });
+
+  // Not Found Container Buttons
+  const notFoundTrackBtn = document.getElementById('btn-notfound-track-again');
+  if (notFoundTrackBtn) {
+    notFoundTrackBtn.addEventListener('click', () => {
+      window.history.pushState({}, '', '/track');
+      navigateToScreen(3);
+    });
+  }
+  const notFoundHomeBtn = document.getElementById('btn-notfound-home');
+  if (notFoundHomeBtn) {
+    notFoundHomeBtn.addEventListener('click', () => {
+      window.history.pushState({}, '', '/');
+      navigateToScreen(1);
+    });
+  }
 
   // Screen 4 Accordion Toggle
   document.getElementById('order-accordion-trigger').addEventListener('click', toggleOrderAccordion);
@@ -569,10 +622,18 @@ function bindGlobalEvents() {
     if (e.target.id === 'cancel-modal-overlay') toggleCancelModal(false);
   });
 
-  // Screen 5 Choices (Item Unavailable)
-  document.getElementById('choice-skip-item').addEventListener('click', () => handleItemChoice('skip'));
-  document.getElementById('choice-call-me').addEventListener('click', () => handleItemChoice('call'));
-  document.getElementById('choice-cancel-unavailable').addEventListener('click', () => handleItemChoice('cancel'));
+  // Screen 4 Item Unavailable Alert Action Buttons
+  const skipBtn = document.getElementById('btn-track-skip-item');
+  if (skipBtn) skipBtn.addEventListener('click', () => handleItemDecision('skip'));
+  const callBtn = document.getElementById('btn-track-call-me');
+  if (callBtn) callBtn.addEventListener('click', () => handleItemDecision('call_me'));
+  const cancelUnavailBtn = document.getElementById('btn-track-cancel-order');
+  if (cancelUnavailBtn) cancelUnavailBtn.addEventListener('click', () => handleItemDecision('cancel'));
+
+  // Screen 5 Choices (Item Unavailable standalone view)
+  document.getElementById('choice-skip-item').addEventListener('click', () => handleItemDecision('skip'));
+  document.getElementById('choice-call-me').addEventListener('click', () => handleItemDecision('call_me'));
+  document.getElementById('choice-cancel-unavailable').addEventListener('click', () => handleItemDecision('cancel'));
 
   // Screen 6 Payment Screen Actions
   document.getElementById('btn-back-from-payment').addEventListener('click', () => navigateToScreen(4));
@@ -602,15 +663,24 @@ function bindGlobalEvents() {
 
   // Screen 7 Rating & Action Buttons
   document.querySelectorAll('.star-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
+    btn.addEventListener('click', () => {
       const star = parseInt(btn.dataset.star, 10);
       setStarRating(star);
     });
   });
-  document.getElementById('btn-delivered-done').addEventListener('click', () => navigateToScreen(1));
-  document.getElementById('btn-delivered-reorder').addEventListener('click', () => {
-    applyReturningCustomerData();
-    navigateToScreen(1);
+  document.getElementById('btn-delivered-done').addEventListener('click', submitDeliveredRating);
+  document.getElementById('btn-delivered-reorder').addEventListener('click', handleOrderAgain);
+
+  // Tab Visibility Auto-Pause Polling
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+      stopPolling();
+    } else {
+      if (AppState.currentScreen === 4 && AppState.activeOrder.trackingToken) {
+        fetchTrackingData(AppState.activeOrder.trackingToken, true);
+        startPolling(AppState.activeOrder.trackingToken);
+      }
+    }
   });
 
   // Demo Toolbar Listeners
@@ -777,7 +847,31 @@ function applyLanguage(lang) {
   document.getElementById('empty-orders-text').textContent = dict.noActiveOrders;
   document.getElementById('empty-place-btn-text').textContent = dict.btnPlaceNewOrder;
 
-  // Screen 4: Tracking
+  // Screen 4: Tracking & Not Found
+  const notFoundTitleEl = document.getElementById('not-found-title');
+  if (notFoundTitleEl) notFoundTitleEl.textContent = dict.trackNotFoundTitle;
+  const notFoundMsgEl = document.getElementById('not-found-msg');
+  if (notFoundMsgEl) notFoundMsgEl.textContent = dict.trackNotFoundMsg;
+  const notFoundTrackEl = document.getElementById('notfound-track-text');
+  if (notFoundTrackEl) notFoundTrackEl.textContent = dict.btnTrackAnother;
+  const notFoundHomeEl = document.getElementById('notfound-home-text');
+  if (notFoundHomeEl) notFoundHomeEl.textContent = dict.btnHome;
+
+  const pollStatusEl = document.getElementById('tracking-poll-status-text');
+  if (pollStatusEl) pollStatusEl.textContent = dict.updatedJustNow;
+
+  const trackHeaderLabel = document.getElementById('tracking-header-label');
+  if (trackHeaderLabel) trackHeaderLabel.textContent = lang === 'en' ? "Tracking Order" : "ऑर्डर ट्रैकिंग";
+
+  const trackUnavailTitle = document.getElementById('track-unavailable-title');
+  if (trackUnavailTitle) trackUnavailTitle.textContent = dict.unavailableTitle;
+  const trackSkipBtn = document.getElementById('track-skip-btn-text');
+  if (trackSkipBtn) trackSkipBtn.textContent = dict.btnSkipItem;
+  const trackCallBtn = document.getElementById('track-call-btn-text');
+  if (trackCallBtn) trackCallBtn.textContent = dict.btnCallMe;
+  const trackCancelBtn = document.getElementById('track-cancel-btn-text');
+  if (trackCancelBtn) trackCancelBtn.textContent = dict.btnCancelOrder;
+
   document.getElementById('rider-card-title').textContent = dict.riderAssignedTitle;
   document.getElementById('call-rider-text').textContent = dict.btnCallRider;
   document.getElementById('wa-rider-text').textContent = dict.btnWaRider;
@@ -1481,6 +1575,155 @@ function renderOrderPlacedSummary() {
   document.getElementById('summary-val-payment').textContent = payLabel;
 }
 
+// Polling Timer Reference
+let pollTimer = null;
+
+function startPolling(token) {
+  stopPolling();
+  if (!token) return;
+  pollTimer = setInterval(() => {
+    if (document.visibilityState !== 'hidden' && AppState.currentScreen === 4 && AppState.activeOrder.trackingToken) {
+      fetchTrackingData(AppState.activeOrder.trackingToken, true);
+    }
+  }, 10000); // 10 seconds
+}
+
+function stopPolling() {
+  if (pollTimer) {
+    clearInterval(pollTimer);
+    pollTimer = null;
+  }
+}
+
+function updateLiveIndicator() {
+  const pollText = document.getElementById('tracking-poll-status-text');
+  if (pollText) {
+    pollText.textContent = I18N[AppState.lang].updatedJustNow || "Updated just now";
+  }
+}
+
+function showNotFoundScreen() {
+  const notFoundCard = document.getElementById('tracking-not-found-container');
+  const activeContent = document.getElementById('tracking-active-content');
+  if (notFoundCard) notFoundCard.style.display = 'flex';
+  if (activeContent) activeContent.style.display = 'none';
+}
+
+function showTrackingActiveContent() {
+  const notFoundCard = document.getElementById('tracking-not-found-container');
+  const activeContent = document.getElementById('tracking-active-content');
+  if (notFoundCard) notFoundCard.style.display = 'none';
+  if (activeContent) activeContent.style.display = 'flex';
+}
+
+// Route Handler
+function handleRoute() {
+  const path = window.location.pathname;
+  if (path.startsWith('/track/')) {
+    const token = path.replace(/^\/track\//, '').split('/')[0].split('?')[0];
+    if (token) {
+      AppState.activeOrder.trackingToken = token;
+      navigateToScreen(4);
+      fetchTrackingData(token);
+      return;
+    }
+  }
+  if (path === '/track') {
+    navigateToScreen(3);
+    return;
+  }
+  if (path === '/order/placed') {
+    navigateToScreen(2);
+    return;
+  }
+  navigateToScreen(1);
+}
+
+// Fetch live order tracking data from GET /api/v1/track/[token]
+async function fetchTrackingData(token, isBackground = false) {
+  if (!token) return;
+  try {
+    const res = await fetch(`/api/v1/track/${encodeURIComponent(token)}`);
+    if (res.status === 404 || !res.ok) {
+      showNotFoundScreen();
+      stopPolling();
+      return;
+    }
+
+    const data = await res.json();
+    if (!data.success || !data.order) {
+      showNotFoundScreen();
+      stopPolling();
+      return;
+    }
+
+    const order = data.order;
+    showTrackingActiveContent();
+
+    // Map order fields to AppState
+    AppState.activeOrder.orderId = order.orderNumber;
+    AppState.activeOrder.orderNumber = order.orderNumber;
+    AppState.activeOrder.trackingToken = token;
+    AppState.activeOrder.status = order.status;
+    AppState.trackingState = order.status;
+    AppState.activeOrder.rider = order.rider;
+    AppState.activeOrder.bills = order.bills || [];
+    AppState.activeOrder.billAmount = order.final_amount || order.totalAmount || "0";
+    AppState.activeOrder.final_amount = order.final_amount;
+    AppState.activeOrder.paymentMethod = order.paymentMethod;
+    AppState.activeOrder.paymentStatus = order.paymentStatus;
+    AppState.activeOrder.paymentPaid = order.paymentStatus === 'paid';
+    AppState.activeOrder.deliveryCode = order.deliveryCode;
+    AppState.activeOrder.unavailableItem = order.unavailableItem;
+    AppState.activeOrder.items = order.items || [];
+    AppState.activeOrder.timeline = order.timeline || [];
+    AppState.activeOrder.deliveryAddress = order.deliveryAddress;
+    AppState.activeOrder.deliveryLandmark = order.deliveryLandmark;
+    AppState.activeOrder.deliveryPhone = order.deliveryPhone;
+    AppState.activeOrder.deliveryName = order.deliveryName;
+    AppState.activeOrder.cancelReason = order.cancelReason;
+    if (order.rating) {
+      AppState.starsRating = order.rating.rating;
+    }
+
+    // Save to localStorage for recent-order card
+    try {
+      localStorage.setItem('zupit.recent_order', JSON.stringify({
+        orderNumber: order.orderNumber,
+        orderId: order.orderNumber,
+        trackingToken: token,
+        status: order.status,
+        phone: order.deliveryPhone,
+        address: order.deliveryAddress,
+        updatedAt: new Date().toISOString(),
+      }));
+    } catch (e) {}
+
+    // Render Screen
+    if (AppState.currentScreen === 4) {
+      if (order.status === 'delivered') {
+        // If delivered, can show screen 7 or render on tracking screen
+        navigateToScreen(7);
+      } else {
+        renderTrackingScreen();
+      }
+    } else if (AppState.currentScreen === 7 && order.status === 'delivered') {
+      renderDeliveredScreen();
+    }
+
+    updateLiveIndicator();
+
+    if (!pollTimer && document.visibilityState !== 'hidden') {
+      startPolling(token);
+    }
+  } catch (err) {
+    console.error('Error fetching order tracking info:', err);
+    if (!isBackground) {
+      showToast(AppState.lang === 'en' ? "Unable to connect to server" : "सर्वर से कनेक्ट करने में असमर्थ");
+    }
+  }
+}
+
 // Screen 3: Track Order Lookup
 function renderTrackLookupView() {
   const recentCard = document.getElementById('recent-order-tappable-card');
@@ -1488,30 +1731,73 @@ function renderTrackLookupView() {
   const errBox = document.getElementById('track-lookup-error');
   errBox.classList.remove('visible');
 
-  if (AppState.activeOrder && AppState.activeOrder.orderId) {
+  const recentRaw = localStorage.getItem('zupit.recent_order');
+  let recent = null;
+  if (recentRaw) {
+    try {
+      recent = JSON.parse(recentRaw);
+    } catch (e) {}
+  }
+
+  const activeId = recent ? (recent.orderNumber || recent.orderId) : AppState.activeOrder.orderId;
+  const activeStatus = recent ? (recent.status || AppState.trackingState) : AppState.trackingState;
+  const activeAddr = recent ? (recent.address || AppState.address) : AppState.address;
+
+  if (activeId) {
     recentCard.style.display = 'flex';
     emptyCard.style.display = 'none';
-    document.getElementById('recent-card-order-id').textContent = AppState.activeOrder.orderId;
-    document.getElementById('recent-card-status').textContent = getStatusLabel(AppState.trackingState);
-    document.getElementById('recent-card-address').textContent = `${AppState.address || "Station Road, Jamui"}`;
+    document.getElementById('recent-card-order-id').textContent = activeId;
+    document.getElementById('recent-card-status').textContent = getStatusLabel(activeStatus);
+    document.getElementById('recent-card-address').textContent = activeAddr || "Station Road, Jamui";
   } else {
     recentCard.style.display = 'none';
     emptyCard.style.display = 'flex';
   }
 }
 
-function handleTrackLookup() {
+async function handleTrackLookup() {
   const mobileInput = document.getElementById('field-track-mobile').value.trim();
   const idInput = document.getElementById('field-track-id').value.trim().toUpperCase();
   const errBox = document.getElementById('track-lookup-error');
   const dict = I18N[AppState.lang];
 
-  if (!idInput || !mobileInput || (AppState.activeOrder && idInput !== AppState.activeOrder.orderId)) {
+  if (!idInput || !mobileInput) {
     errBox.textContent = dict.trackErrorMsg;
     errBox.classList.add('visible');
-  } else {
+    return;
+  }
+
+  const submitBtn = document.getElementById('btn-track-lookup-submit');
+  const origBtnText = document.getElementById('track-lookup-btn-text').textContent;
+  submitBtn.disabled = true;
+  document.getElementById('track-lookup-btn-text').textContent = AppState.lang === 'en' ? 'Checking...' : 'जाँच हो रही है...';
+
+  try {
+    const res = await fetch('/api/v1/track/lookup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone: mobileInput, orderNumber: idInput })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success || !data.token) {
+      errBox.textContent = data.message || dict.trackErrorMsg;
+      errBox.classList.add('visible');
+      return;
+    }
+
     errBox.classList.remove('visible');
+    AppState.activeOrder.trackingToken = data.token;
+    AppState.activeOrder.orderId = data.orderNumber || idInput;
+    window.history.pushState({}, '', `/track/${data.token}`);
+    await fetchTrackingData(data.token);
     navigateToScreen(4);
+  } catch (err) {
+    console.error('Error during lookup:', err);
+    errBox.textContent = dict.trackErrorMsg;
+    errBox.classList.add('visible');
+  } finally {
+    submitBtn.disabled = false;
+    document.getElementById('track-lookup-btn-text').textContent = origBtnText;
   }
 }
 
@@ -1521,70 +1807,113 @@ function renderTrackingScreen() {
   const state = AppState.trackingState;
 
   // Order ID
-  document.getElementById('tracking-order-id').textContent = AppState.activeOrder.orderId;
+  document.getElementById('tracking-order-id').textContent = AppState.activeOrder.orderId || "ZP-10001";
 
   // Status Pill
   const pill = document.getElementById('tracking-status-pill');
   pill.className = `status-pill status-${getStatusPillClass(state)}`;
   document.getElementById('status-pill-text').textContent = getStatusLabel(state);
 
-  // Stepper
+  // Vertical Stepper
   renderStepperNodes(state);
 
-  // Conditional Cards:
+  // Rider Card: Visible once assigned
   const riderCard = document.getElementById('rider-info-card');
-  const billCard = document.getElementById('bill-info-card');
-  const codeCard = document.getElementById('delivery-code-card');
-  const cancelLink = document.getElementById('cancel-order-link-btn');
+  const rider = AppState.activeOrder.rider;
+  if (rider && rider.name) {
+    riderCard.style.display = 'flex';
+    const initials = rider.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'SK';
+    document.getElementById('rider-avatar-text').textContent = initials;
+    document.getElementById('rider-name-text').textContent = rider.name;
+    document.getElementById('rider-vehicle-text').textContent = `Vehicle: ${rider.vehicle || rider.vehicleNumber || 'BR-46-A-1284'}`;
 
-  // Rider Card: Visible when rider assigned, buying, bill ready, or out for delivery
-  if (['assigned', 'buying', 'bill_online', 'bill_cash', 'out_for_delivery'].includes(state)) {
+    const callBtn = riderCard.querySelector('.rider-call-btn');
+    const waBtn = riderCard.querySelector('.rider-wa-btn');
+    const cleanPhone = (rider.phone || '6207856200').replace(/\D/g, '').slice(-10);
+    if (callBtn) callBtn.href = `tel:+91${cleanPhone}`;
+    if (waBtn) waBtn.href = `https://wa.me/91${cleanPhone}`;
+  } else if (['assigned', 'rider_assigned', 'buying', 'out_for_delivery'].includes(state)) {
+    // Demo fallback if rider simulated
     riderCard.style.display = 'flex';
   } else {
     riderCard.style.display = 'none';
   }
 
-  // Bill Card: Visible when bill is ready, or out for delivery, or delivered
-  if (['bill_online', 'bill_cash', 'out_for_delivery', 'delivered'].includes(state)) {
+  // Bill Card: bill photo thumbnail (opens full screen), total in 32px semibold.
+  const billCard = document.getElementById('bill-info-card');
+  const bills = AppState.activeOrder.bills;
+  const billAmount = AppState.activeOrder.final_amount || AppState.activeOrder.billAmount || AppState.activeOrder.totalAmount || "0";
+  const numAmount = parseFloat(billAmount) || 0;
+  const showBill = (bills && bills.length > 0) || ['buying', 'out_for_delivery', 'delivered'].includes(state) || numAmount > 0;
+
+  if (showBill && numAmount > 0) {
     billCard.style.display = 'flex';
-    document.getElementById('bill-amount-display').textContent = `₹ ${AppState.activeOrder.billAmount}`;
-    document.getElementById('bill-thumb-img-preview').src = ASSETS.billThumbnail;
+    document.getElementById('bill-amount-display').textContent = `₹ ${numAmount.toFixed(0)}`;
+
+    const billThumb = document.getElementById('bill-thumb-img-preview');
+    if (bills && bills.length > 0 && bills[0].billImageUrl) {
+      billThumb.src = bills[0].billImageUrl;
+    } else {
+      billThumb.src = ASSETS.billThumbnail;
+    }
 
     const payBtn = document.getElementById('btn-bill-pay-now');
     const codNote = document.getElementById('bill-cod-rider-note');
 
-    if (state === 'bill_online' && !AppState.activeOrder.paymentPaid) {
+    if (AppState.activeOrder.paymentMethod === 'online' && !AppState.activeOrder.paymentPaid) {
       payBtn.style.display = 'flex';
       codNote.style.display = 'none';
-    } else if (state === 'bill_online' && AppState.activeOrder.paymentPaid) {
+    } else if (AppState.activeOrder.paymentMethod === 'online' && AppState.activeOrder.paymentPaid) {
       payBtn.style.display = 'none';
       codNote.style.display = 'block';
       codNote.textContent = AppState.lang === 'en' ? "Bill paid online via UPI" : "UPI द्वारा बिल भुगतान हो चुका है";
       codNote.style.color = "var(--color-success)";
     } else {
+      // Cash payment: 'Pay ₹486 in cash to the rider'
       payBtn.style.display = 'none';
       codNote.style.display = 'block';
-      codNote.textContent = dict.payCodToRider.replace('{amount}', AppState.activeOrder.billAmount);
+      const formattedAmt = numAmount.toFixed(0);
+      codNote.textContent = dict.payCodToRider.replace('{amount}', formattedAmt);
       codNote.style.color = "var(--color-text-secondary)";
     }
   } else {
     billCard.style.display = 'none';
   }
 
-  // Delivery Code Card: Visible ONLY during out_for_delivery
+  // Delivery Code Card: four boxes 56x64px, radius 12, 32px semibold tabular numbers.
+  // Displayed ONLY while status is out_for_delivery
+  const codeCard = document.getElementById('delivery-code-card');
   if (state === 'out_for_delivery') {
     codeCard.style.display = 'flex';
-    const digits = AppState.activeOrder.deliveryCode.split(' ');
-    document.getElementById('code-d1').textContent = digits[0] || '4';
-    document.getElementById('code-d2').textContent = digits[1] || '8';
-    document.getElementById('code-d3').textContent = digits[2] || '2';
-    document.getElementById('code-d4').textContent = digits[3] || '9';
+    const rawCode = String(AppState.activeOrder.deliveryCode || '4829').replace(/\s/g, '');
+    document.getElementById('code-d1').textContent = rawCode[0] || '4';
+    document.getElementById('code-d2').textContent = rawCode[1] || '8';
+    document.getElementById('code-d3').textContent = rawCode[2] || '2';
+    document.getElementById('code-d4').textContent = rawCode[3] || '9';
   } else {
     codeCard.style.display = 'none';
   }
 
-  // Cancel order link: Visible ONLY before buying step (i.e. 'placed' or 'assigned')
-  if (['placed', 'assigned'].includes(state)) {
+  // Item Unavailable Alert Card: three buttons: Skip it, Call me, Cancel order
+  const unavailAlert = document.getElementById('tracking-item-unavailable-alert');
+  const unavailItem = AppState.activeOrder.unavailableItem;
+  if (unavailAlert) {
+    if (unavailItem) {
+      unavailAlert.style.display = 'block';
+      const descEl = document.getElementById('track-unavailable-desc');
+      if (descEl) {
+        descEl.textContent = AppState.lang === 'en'
+          ? `${unavailItem.name} ${unavailItem.strength ? `(${unavailItem.strength})` : ''} was not available at the pharmacy.`
+          : `${unavailItem.name} दवा दुकान पर उपलब्ध नहीं थी।`;
+      }
+    } else {
+      unavailAlert.style.display = 'none';
+    }
+  }
+
+  // Cancel order text link: only before buying (placed or rider_assigned)
+  const cancelLink = document.getElementById('cancel-order-link-btn');
+  if (['placed', 'assigned', 'rider_assigned'].includes(state)) {
     cancelLink.style.display = 'block';
   } else {
     cancelLink.style.display = 'none';
@@ -1596,34 +1925,50 @@ function renderTrackingScreen() {
 
 function renderStepperNodes(state) {
   const dict = I18N[AppState.lang];
-  const orderSteps = ['placed', 'assigned', 'buying', 'out_for_delivery', 'delivered'];
-  const currentIndex = orderSteps.indexOf(state === 'bill_online' || state === 'bill_cash' ? 'buying' : state);
+  // Five steps: Placed, Rider assigned, Buying medicines, Out for delivery, Delivered
+  const orderSteps = ['placed', 'rider_assigned', 'buying', 'out_for_delivery', 'delivered'];
+  let normState = state;
+  if (state === 'assigned') normState = 'rider_assigned';
+  if (state === 'bill_online' || state === 'bill_cash') normState = 'buying';
+
+  const currentIndex = orderSteps.indexOf(normState);
+
+  // Extract timeline events
+  const timelineMap = {};
+  if (AppState.activeOrder.timeline && Array.isArray(AppState.activeOrder.timeline)) {
+    AppState.activeOrder.timeline.forEach(ev => {
+      if (ev.status && ev.createdAt) {
+        timelineMap[ev.status] = formatTime(ev.createdAt);
+      }
+    });
+  }
 
   const stepsConfig = [
-    { key: 'placed', title: dict.statusStepPlaced, time: AppState.activeOrder.timestamps.placed },
-    { key: 'assigned', title: dict.statusStepAssigned, time: AppState.activeOrder.timestamps.assigned },
-    { key: 'buying', title: dict.statusStepBuying, time: AppState.activeOrder.timestamps.buying },
-    { key: 'out_for_delivery', title: dict.statusStepTransit, time: AppState.activeOrder.timestamps.out_for_delivery },
-    { key: 'delivered', title: dict.statusStepDelivered, time: AppState.activeOrder.timestamps.delivered }
+    { key: 'placed', title: dict.statusStepPlaced, time: timelineMap['placed'] || (AppState.activeOrder.timestamps?.placed || '10:15 AM') },
+    { key: 'rider_assigned', title: dict.statusStepAssigned, time: timelineMap['rider_assigned'] || (AppState.activeOrder.timestamps?.assigned || '—') },
+    { key: 'buying', title: dict.statusStepBuying, time: timelineMap['buying'] || (AppState.activeOrder.timestamps?.buying || '—') },
+    { key: 'out_for_delivery', title: dict.statusStepTransit, time: timelineMap['out_for_delivery'] || (AppState.activeOrder.timestamps?.out_for_delivery || '—') },
+    { key: 'delivered', title: dict.statusStepDelivered, time: timelineMap['delivered'] || (AppState.activeOrder.timestamps?.delivered || '—') }
   ];
 
   const stepperContainer = document.getElementById('stepper-nodes-wrap');
   stepperContainer.innerHTML = '';
 
   stepsConfig.forEach((step, idx) => {
-    const isCompleted = idx < currentIndex || (state === 'delivered' && idx <= currentIndex);
-    const isActive = idx === currentIndex && state !== 'cancelled';
-    const isCancelled = state === 'cancelled';
+    const isCompleted = (normState === 'delivered') || (currentIndex !== -1 && idx < currentIndex);
+    const isActive = idx === currentIndex && normState !== 'cancelled';
 
     let nodeClass = 'step-node';
     if (isCompleted) nodeClass += ' completed';
     if (isActive) nodeClass += ' active-step';
 
+    const checkSvg = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+
     const node = document.createElement('div');
     node.className = nodeClass;
     node.innerHTML = `
       <div class="step-axis">
-        <div class="step-bullet">${isCompleted ? '✓' : idx + 1}</div>
+        <div class="step-bullet">${isCompleted ? checkSvg : ''}</div>
         ${idx < stepsConfig.length - 1 ? '<div class="step-connector-line"></div>' : ''}
       </div>
       <div class="step-content">
@@ -1641,10 +1986,25 @@ function renderStepperNodes(state) {
   });
 }
 
+function formatTime(isoString) {
+  if (!isoString) return '—';
+  try {
+    const d = new Date(isoString);
+    let hours = d.getHours();
+    const minutes = d.getMinutes().toString().padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    return `${hours}:${minutes} ${ampm}`;
+  } catch (e) {
+    return '—';
+  }
+}
+
 function getStatusPillClass(state) {
   switch (state) {
     case 'placed': return 'placed';
-    case 'assigned': return 'assigned';
+    case 'assigned':
+    case 'rider_assigned': return 'assigned';
     case 'buying': return 'buying';
     case 'bill_online':
     case 'bill_cash': return 'bill';
@@ -1659,9 +2019,10 @@ function getStatusLabel(state) {
   const dict = I18N[AppState.lang];
   switch (state) {
     case 'placed': return dict.statusStepPlaced;
-    case 'assigned': return dict.statusStepAssigned;
+    case 'assigned':
+    case 'rider_assigned': return dict.statusStepAssigned;
     case 'buying': return dict.statusStepBuying;
-    case 'bill_online': return dict.billCardTitle;
+    case 'bill_online':
     case 'bill_cash': return dict.billCardTitle;
     case 'out_for_delivery': return dict.statusStepTransit;
     case 'delivered': return dict.statusStepDelivered;
@@ -1674,14 +2035,19 @@ function renderOrderAccordionDetails() {
   const itemsList = document.getElementById('accordion-items-list');
   itemsList.innerHTML = '';
 
-  const validMeds = AppState.medicines.filter(m => m.name.trim().length > 0);
-  if (validMeds.length > 0) {
-    validMeds.forEach(m => {
+  const items = AppState.activeOrder.items && AppState.activeOrder.items.length > 0
+    ? AppState.activeOrder.items
+    : AppState.medicines.filter(m => m.name && m.name.trim().length > 0);
+
+  if (items.length > 0) {
+    items.forEach(m => {
       const row = document.createElement('div');
       row.className = 'summary-row';
+      const strengthDisplay = m.strength ? ` (${m.strength})` : '';
+      const qty = m.quantity || m.qty || 1;
       row.innerHTML = `
-        <span class="summary-label">${m.name} (${m.strength || 'standard'})</span>
-        <span class="summary-val">Qty: ${m.qty}</span>
+        <span class="summary-label">${m.name}${strengthDisplay}</span>
+        <span class="summary-val">Qty: ${qty}</span>
       `;
       itemsList.appendChild(row);
     });
@@ -1697,7 +2063,9 @@ function renderOrderAccordionDetails() {
     itemsList.appendChild(pRow);
   }
 
-  document.getElementById('accordion-address-val').textContent = `${AppState.address || "Station Road"}, ${AppState.landmark || "Gandhi Chowk"}`;
+  const addrVal = AppState.activeOrder.deliveryAddress || AppState.address || "Station Road";
+  const landmarkVal = AppState.activeOrder.deliveryLandmark || AppState.landmark || "Gandhi Chowk";
+  document.getElementById('accordion-address-val').textContent = `${addrVal}, ${landmarkVal}`;
 }
 
 function toggleOrderAccordion() {
@@ -1716,7 +2084,13 @@ function toggleOrderAccordion() {
 function toggleBillLightbox(show) {
   const modal = document.getElementById('bill-lightbox-overlay');
   const img = document.getElementById('lightbox-bill-img');
-  img.src = ASSETS.billThumbnail;
+  const bills = AppState.activeOrder.bills;
+  if (bills && bills.length > 0 && bills[0].billImageUrl) {
+    img.src = bills[0].billImageUrl;
+  } else {
+    img.src = ASSETS.billThumbnail;
+  }
+
   if (show) {
     modal.classList.add('active');
   } else {
@@ -1734,27 +2108,81 @@ function toggleCancelModal(show) {
   }
 }
 
-function confirmOrderCancellation() {
+async function confirmOrderCancellation() {
   toggleCancelModal(false);
-  AppState.trackingState = 'cancelled';
-  renderTrackingScreen();
-  showToast(AppState.lang === 'en' ? "Order ZP-10482 cancelled" : "ऑर्डर रद्द कर दिया गया");
+  const token = AppState.activeOrder.trackingToken;
+  if (!token) {
+    AppState.trackingState = 'cancelled';
+    renderTrackingScreen();
+    showToast(AppState.lang === 'en' ? "Order cancelled" : "ऑर्डर रद्द कर दिया गया");
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/v1/track/${encodeURIComponent(token)}/cancel`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason: 'Cancelled by customer via tracking page' })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      showToast(data.message || (AppState.lang === 'en' ? "Could not cancel order" : "ऑर्डर रद्द नहीं किया जा सका"));
+      return;
+    }
+    showToast(AppState.lang === 'en' ? `Order ${AppState.activeOrder.orderId} cancelled` : "ऑर्डर रद्द कर दिया गया");
+    await fetchTrackingData(token);
+  } catch (err) {
+    console.error('Error cancelling order:', err);
+    showToast(AppState.lang === 'en' ? "Failed to cancel order" : "ऑर्डर रद्द करने में विफल");
+  }
 }
 
-// Screen 5: Item Unavailable Handlers
-function handleItemChoice(choice) {
-  if (choice === 'skip') {
-    AppState.trackingState = 'buying';
-    navigateToScreen(4);
-    showToast(AppState.lang === 'en' ? "Item skipped. Rider will purchase rest." : "दवा छोड़ दी गई। बाकी दवाइयां खरीदी जा रही हैं।");
-  } else if (choice === 'call') {
-    AppState.trackingState = 'buying';
-    navigateToScreen(4);
-    showToast(AppState.lang === 'en' ? "Rider is calling you now." : "राइडर आपको कॉल कर रहे हैं।");
-  } else if (choice === 'cancel') {
-    AppState.trackingState = 'cancelled';
-    navigateToScreen(4);
-    showToast(AppState.lang === 'en' ? "Order cancelled." : "ऑर्डर रद्द कर दिया गया।");
+// Handle Customer Item Decisions: 'skip' | 'call_me' | 'cancel'
+async function handleItemDecision(decision) {
+  const token = AppState.activeOrder.trackingToken;
+  const item = AppState.activeOrder.unavailableItem;
+
+  if (!token || !item) {
+    // Demo fallback
+    if (decision === 'skip') {
+      AppState.trackingState = 'buying';
+      AppState.activeOrder.unavailableItem = null;
+      renderTrackingScreen();
+      showToast(AppState.lang === 'en' ? "Item skipped. Rider will purchase remaining medicines." : "दवा छोड़ दी गई। बाकी दवाइयां खरीदी जा रही हैं।");
+    } else if (decision === 'call_me') {
+      showToast(AppState.lang === 'en' ? "Rider will call you shortly." : "राइडर आपको कॉल करेंगे।");
+    } else if (decision === 'cancel') {
+      AppState.trackingState = 'cancelled';
+      renderTrackingScreen();
+      showToast(AppState.lang === 'en' ? "Order cancelled." : "ऑर्डर रद्द कर दिया गया।");
+    }
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/v1/track/${encodeURIComponent(token)}/item-decision`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ itemId: item.id, decision })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      showToast(data.message || "Failed to update decision");
+      return;
+    }
+
+    if (decision === 'skip') {
+      showToast(AppState.lang === 'en' ? "Item skipped. Rider will purchase remaining medicines." : "दवा छोड़ दी गई। बाकी दवाइयां खरीदी जा रही हैं।");
+    } else if (decision === 'call_me') {
+      showToast(AppState.lang === 'en' ? "Rider will call you shortly." : "राइडर आपको कॉल करेंगे।");
+    } else if (decision === 'cancel') {
+      showToast(AppState.lang === 'en' ? "Order cancelled." : "ऑर्डर रद्द कर दिया गया।");
+    }
+
+    await fetchTrackingData(token);
+  } catch (err) {
+    console.error('Error updating item decision:', err);
+    showToast(AppState.lang === 'en' ? "Failed to update decision" : "निर्णय दर्ज करने में विफल");
   }
 }
 
@@ -1788,8 +2216,23 @@ function executePaymentSimulation() {
 
 // Screen 7: Delivered Screen
 function renderDeliveredScreen() {
-  document.getElementById('delivered-summary-paid-val').textContent = `₹ ${AppState.activeOrder.billAmount}`;
+  const amt = AppState.activeOrder.final_amount || AppState.activeOrder.billAmount || AppState.activeOrder.totalAmount || "0";
+  document.getElementById('delivered-summary-paid-val').textContent = `₹ ${parseFloat(amt).toFixed(0)}`;
   setStarRating(AppState.starsRating || 5);
+
+  const rider = AppState.activeOrder.rider;
+  const riderElem = document.querySelector('#screen-7-view .placed-summary-card .summary-row:nth-child(2) .summary-val');
+  if (riderElem && rider && rider.name) {
+    riderElem.textContent = `${rider.name} (${rider.vehicle || rider.vehicleNumber || 'BR-46-A-1284'})`;
+  }
+
+  const timeElem = document.querySelector('#screen-7-view .placed-summary-card .summary-row:nth-child(3) .summary-val');
+  if (timeElem && AppState.activeOrder.timeline) {
+    const deliveredEv = AppState.activeOrder.timeline.find(e => e.status === 'delivered');
+    if (deliveredEv) {
+      timeElem.textContent = `${formatTime(deliveredEv.createdAt)}, Today`;
+    }
+  }
 }
 
 function setStarRating(rating) {
@@ -1802,6 +2245,55 @@ function setStarRating(rating) {
       btn.classList.remove('active');
     }
   });
+}
+
+async function submitDeliveredRating() {
+  const token = AppState.activeOrder.trackingToken;
+  const stars = AppState.starsRating || 5;
+  const commentBox = document.getElementById('feedback-textarea');
+  const comment = commentBox ? commentBox.value.trim().slice(0, 300) : "";
+
+  if (token) {
+    try {
+      const res = await fetch(`/api/v1/track/${encodeURIComponent(token)}/rating`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stars, comment })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        showToast(AppState.lang === 'en' ? "Thank you for rating your delivery!" : "डिलीवरी रेटिंग देने के लिए धन्यवाद!");
+      }
+    } catch (e) {
+      console.error('Error submitting rating:', e);
+    }
+  }
+
+  window.history.pushState({}, '', '/');
+  navigateToScreen(1);
+}
+
+function handleOrderAgain() {
+  if (AppState.activeOrder) {
+    if (AppState.activeOrder.deliveryName) {
+      document.getElementById('field-full-name').value = AppState.activeOrder.deliveryName;
+    }
+    if (AppState.activeOrder.deliveryPhone) {
+      document.getElementById('field-mobile').value = AppState.activeOrder.deliveryPhone.replace(/\D/g, '').slice(-10);
+    }
+    if (AppState.activeOrder.deliveryAddress) {
+      document.getElementById('field-house-flat').value = AppState.activeOrder.deliveryAddress;
+    }
+    if (AppState.activeOrder.deliveryLandmark) {
+      document.getElementById('field-landmark').value = AppState.activeOrder.deliveryLandmark;
+    }
+    if (AppState.activeOrder.deliveryPincode) {
+      document.getElementById('field-pincode').value = AppState.activeOrder.deliveryPincode;
+      handlePincodeInput();
+    }
+  }
+  window.history.pushState({}, '', '/');
+  navigateToScreen(1);
 }
 
 // Help Sheet
