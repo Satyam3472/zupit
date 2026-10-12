@@ -358,6 +358,15 @@ router.get('/orders/:orderId', async (req: Request, res: Response): Promise<void
     return;
   }
 
+  if (order.riderId !== riderId) {
+    res.status(403).json({
+      success: false,
+      error: 'UNAUTHORIZED',
+      message: 'You are not assigned to this order.',
+    });
+    return;
+  }
+
   // Get items
   const items = await db
     .select()

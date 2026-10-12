@@ -267,13 +267,12 @@ router.get('/:token', async (req: Request, res: Response): Promise<void> => {
       rating = existingRating;
     }
 
-    // 7. Calculate Final Amount
-    let finalAmount = order.totalAmount;
+    // 7. Calculate Final Amount (Totals all bills + delivery fee)
+    let finalAmount = order.finalAmount || order.totalAmount;
     if (billsList.length > 0) {
-      const latestBill = billsList[billsList.length - 1];
-      if (latestBill && latestBill.amount) {
-        finalAmount = latestBill.amount;
-      }
+      const sumBills = billsList.reduce((sum, b) => sum + Number(b.amount || 0), 0);
+      const deliveryFee = Number(order.deliveryFee || 0);
+      finalAmount = order.finalAmount || (sumBills + deliveryFee).toFixed(2);
     }
 
     // 8. Delivery Code: ONLY returned while status is 'out_for_delivery'

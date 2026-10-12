@@ -13,6 +13,7 @@ import {
   serviceableAreas,
 } from '../db/schema.js';
 import { settingsService } from '../services/settingsService.js';
+import { orderService } from '../services/orderService.js';
 import { rateLimit } from '../utils/rateLimit.js';
 
 const router = Router();
@@ -121,180 +122,21 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
   }
 
   try {
-    // 4. Atomic Transaction Execution
-    const result = await db.transaction(async (tx) => {
-      // 4a. Check Customer Blocklist
-      const [existingCustomer] = await tx
-        .select()
-        .from(customers)
-        .where(eq(customers.phone, phone))
-        .limit(1);
+    const idempotencyKey = (req.headers['x-idempotency-key'] as string) || (req.body?.idempotencyKey as string) || undefined;
 
-      if (existingCustomer && !existingCustomer.isActive) {
-        throw {
-          status: 403,
-          code: 'CUSTOMER_BLOCKED',
-          message: 'Please call our support team at +91 62078 56200 to place your order.',
-        };
-      }
-
-      // 4b. Check Serviceable Area
-      const [area] = await tx
-        .select()
-        .from(serviceableAreas)
-        .where(and(eq(serviceableAreas.pincode, pincode), eq(serviceableAreas.isActive, true)))
-        .limit(1);
-
-      if (!area) {
-        throw {
-          status: 400,
-          code: 'UNSERVICEABLE_PINCODE',
-          message: 'We do not deliver to this area yet.',
-        };
-      }
-
-      // 4c. Check Payment Method Settings
-      const platformSettings = await settingsService.getAll();
-      if (paymentMethod === 'cod') {
-        if (!platformSettings.cod_enabled) {
-          throw {
-            status: 400,
-            code: 'COD_DISABLED',
-            message: 'Cash on Delivery is currently disabled. Please select online payment.',
-          };
-        }
-      } else if (paymentMethod === 'online') {
-        if (!platformSettings.payments_enabled) {
-          throw {
-            status: 400,
-            code: 'ONLINE_PAYMENTS_DISABLED',
-            message: 'Online payments are currently disabled. Please select Cash on Delivery.',
-          };
-        }
-      }
-
-      // 4d. Upsert Customer Record
-      let customerId: string;
-      if (existingCustomer) {
-        customerId = existingCustomer.id;
-        await tx
-          .update(customers)
-          .set({ name, updatedAt: new Date() })
-          .where(eq(customers.id, customerId));
-      } else {
-        const [newCustomer] = await tx
-          .insert(customers)
-          .values({
-            name,
-            phone,
-            isActive: true,
-          })
-          .returning({ id: customers.id });
-        customerId = newCustomer.id;
-      }
-
-      // 4e. Create Address and Snapshot
-      const addressSnapshot = {
-        recipientName: name,
-        recipientPhone: phone,
-        houseArea,
-        landmark: landmark || '',
-        pincode,
-        city: 'Jamui',
-        state: 'Bihar',
-      };
-
-      const [newAddress] = await tx
-        .insert(addresses)
-        .values({
-          customerId,
-          recipientName: name,
-          recipientPhone: phone,
-          houseFlat: houseArea,
-          streetArea: houseArea,
-          landmark: landmark || null,
-          pincode,
-          city: 'Jamui',
-          state: 'Bihar',
-        })
-        .returning({ id: addresses.id });
-
-      // 4f. Generate 32-character tracking token & 4-digit verification code
-      const trackingToken = crypto.randomBytes(16).toString('hex'); // 32 hex chars
-      const deliveryCode = Math.floor(1000 + Math.random() * 9000).toString();
-
-      // 4g. Create Order Record
-      const [newOrder] = await tx
-        .insert(orders)
-        .values({
-          customerId,
-          addressId: newAddress.id,
-          deliveryName: name,
-          deliveryPhone: phone,
-          deliveryAddress: houseArea,
-          deliveryLandmark: landmark || null,
-          deliveryPincode: pincode,
-          deliveryCode,
-          status: 'placed',
-          source: 'web',
-          paymentMethod: paymentMethod === 'online' ? 'online' : 'cod',
-          paymentStatus: 'pending',
-          notes: notes || null,
-          trackingToken,
-        })
-        .returning({
-          id: orders.id,
-          orderNumber: orders.orderNumber,
-          trackingToken: orders.trackingToken,
-        });
-
-      // 4h. Insert Medicine Items
-      if (medicines && medicines.length > 0) {
-        for (const item of medicines) {
-          await tx.insert(orderItems).values({
-            orderId: newOrder.id,
-            name: item.name,
-            strength: item.strength || null,
-            quantity: item.quantity,
-            notes: item.notes || null,
-            status: 'pending',
-          });
-        }
-      }
-
-      // 4i. Insert Prescriptions
-      if (rxList && rxList.length > 0) {
-        for (const rx of rxList) {
-          await tx.insert(prescriptions).values({
-            orderId: newOrder.id,
-            fileUrl: rx.fileUrl,
-            fileType: rx.fileType || null,
-            fileSize: rx.fileSize || null,
-            notes: rx.notes || null,
-          });
-        }
-      }
-
-      // 4j. Create First order_status_events Row
-      await tx.insert(orderStatusEvents).values({
-        orderId: newOrder.id,
-        status: 'placed',
-        actorType: 'customer',
-        actorId: customerId,
-        notes: 'Order placed via Zupit web app',
-        metadata: {
-          ip: clientIp,
-          itemCount: medicines.length,
-          prescriptionCount: rxList.length,
-          paymentMethod,
-          addressSnapshot,
-        },
-      });
-
-      return {
-        orderNumber: newOrder.orderNumber,
-        trackingToken: newOrder.trackingToken,
-      };
+    const result = await orderService.createOrder({
+      name,
+      phone,
+      houseArea,
+      landmark,
+      pincode,
+      paymentMethod,
+      source: 'web',
+      notes,
+      medicines,
+      prescriptions: rxList,
+      clientIp,
+      idempotencyKey,
     });
 
     res.status(201).json({
