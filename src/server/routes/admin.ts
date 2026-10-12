@@ -22,6 +22,7 @@ import {
 import { requireAdminApi, requireRole } from '../middleware/auth.js';
 import { settingsService } from '../services/settingsService.js';
 import { auditService } from '../services/auditService.js';
+import { orderService } from '../services/orderService.js';
 
 const router = Router();
 
@@ -709,117 +710,90 @@ router.post('/orders/create', async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    const result = await db.transaction(async (tx) => {
-      // Upsert Customer
-      let customerId: string;
-      const [existingCustomer] = await tx.select().from(customers).where(eq(customers.phone, phone)).limit(1);
-      if (existingCustomer) {
-        customerId = existingCustomer.id;
-        await tx.update(customers).set({ name, updatedAt: new Date() }).where(eq(customers.id, customerId));
-      } else {
-        const [newCustomer] = await tx
-          .insert(customers)
-          .values({ name, phone, isActive: true })
-          .returning({ id: customers.id });
-        customerId = newCustomer.id;
-      }
-
-      // Create Address
-      const [newAddress] = await tx
-        .insert(addresses)
-        .values({
-          customerId,
-          recipientName: name,
-          recipientPhone: phone,
-          houseFlat: houseArea,
-          streetArea: houseArea,
-          landmark: landmark || null,
-          pincode,
-          city: 'Jamui',
-          state: 'Bihar',
-        })
-        .returning({ id: addresses.id });
-
-      const trackingToken = crypto.randomBytes(16).toString('hex');
-      const deliveryCode = Math.floor(1000 + Math.random() * 9000).toString();
-
-      // Create Order with createdByAdminId
-      const [newOrder] = await tx
-        .insert(orders)
-        .values({
-          customerId,
-          addressId: newAddress.id,
-          deliveryName: name,
-          deliveryPhone: phone,
-          deliveryAddress: houseArea,
-          deliveryLandmark: landmark || null,
-          deliveryPincode: pincode,
-          deliveryCode,
-          status: 'placed',
-          source,
-          paymentMethod,
-          paymentStatus: 'pending',
-          notes: notes || null,
-          trackingToken,
-          createdByAdminId: req.admin!.userId,
-        })
-        .returning({
-          id: orders.id,
-          orderNumber: orders.orderNumber,
-          trackingToken: orders.trackingToken,
-        });
-
-      // Insert Items
-      for (const m of medicines) {
-        await tx.insert(orderItems).values({
-          orderId: newOrder.id,
-          name: m.name,
-          strength: m.strength || null,
-          quantity: m.quantity,
-          notes: m.notes || null,
-          status: 'pending',
-        });
-      }
-
-      // Insert Prescriptions
-      for (const rx of rxList) {
-        await tx.insert(prescriptions).values({
-          orderId: newOrder.id,
-          fileUrl: rx.fileUrl,
-          fileType: rx.fileType || null,
-          notes: rx.notes || null,
-        });
-      }
-
-      // Initial Timeline Event
-      await tx.insert(orderStatusEvents).values({
-        orderId: newOrder.id,
-        status: 'placed',
-        actorType: 'admin',
-        actorId: req.admin!.userId,
-        notes: `Order created manually by Admin via ${source.toUpperCase()}`,
-      });
-
-      return newOrder;
+    const result = await orderService.createOrder({
+      name,
+      phone,
+      houseArea,
+      landmark,
+      pincode,
+      source,
+      paymentMethod,
+      notes,
+      medicines,
+      prescriptions: rxList,
+      createdByAdminId: req.admin!.userId,
+      clientIp,
     });
 
     await auditService.log(
       { actorType: 'admin', actorId: req.admin!.userId, ipAddress: clientIp },
       'order_created_by_admin',
-      { type: 'order', id: result.id },
+      { type: 'order', id: result.orderId },
       { orderNumber: result.orderNumber, source, phone }
     );
 
     res.status(201).json({
       success: true,
       orderNumber: result.orderNumber,
-      orderId: result.id,
+      orderId: result.orderId,
       trackingToken: result.trackingToken,
       message: 'Order created successfully.',
     });
   } catch (err: any) {
+    if (err && err.status) {
+      res.status(err.status).json({
+        success: false,
+        code: err.code || 'BAD_REQUEST',
+        message: err.message || 'Failed to create order.',
+      });
+      return;
+    }
     console.error('Error creating order by admin:', err);
     res.status(500).json({ success: false, message: 'Failed to create order.' });
+  }
+});
+
+/**
+ * POST /api/v1/admin/orders/:id/reset-delivery-code
+ * Resets delivery code attempts counter and generates a fresh 4-digit code.
+ */
+router.post('/orders/:id/reset-delivery-code', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = getParam(req.params.id);
+    const clientIp = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || '127.0.0.1';
+
+    const [order] = await db.select().from(orders).where(eq(orders.id, id)).limit(1);
+    if (!order) {
+      res.status(404).json({ success: false, message: 'Order not found.' });
+      return;
+    }
+
+    const newDeliveryCode = Math.floor(1000 + Math.random() * 9000).toString();
+
+    await db
+      .update(orders)
+      .set({
+        deliveryCode: newDeliveryCode,
+        deliveryCodeAttempts: 0,
+        updatedAt: new Date(),
+      })
+      .where(eq(orders.id, id));
+
+    await auditService.log(
+      { actorType: 'admin', actorId: req.admin!.userId, ipAddress: clientIp },
+      'reset_delivery_code',
+      { type: 'order', id },
+      { orderNumber: order.orderNumber, newDeliveryCode }
+    );
+
+    res.status(200).json({
+      success: true,
+      deliveryCode: newDeliveryCode,
+      message: 'Delivery code and attempts counter reset successfully.',
+    });
+  } catch (err: any) {
+    console.error('Error resetting delivery code:', err);
+    res.status(500).json({ success: false, message: 'Failed to reset delivery code.' });
   }
 });
 
