@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Zupit - Medicines Delivered to Your Door | Jamui</title>
+  <meta name="description" content="Order medicines in under one minute with no login, no OTP, and free delivery in Jamui. Inspect the physical bill before paying.">
+  
+  <!-- Typography: Inter & Noto Sans Devanagari for bilingual harmony -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Design System CSS -->
+  <link rel="stylesheet" href="/style.css">
+  
+  <style>
+    /* Inline micro utilities for animations and toast */
+    .spin { animation: spin 1s linear infinite; }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+    
+    .app-toast-box {
+      position: absolute;
+      top: 60px;
+      left: 16px;
+      right: 16px;
+      background-color: #14181F;
+      color: #FFFFFF;
+      padding: 10px 14px;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-weight: 500;
+      text-align: center;
+      z-index: 120;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(-8px);
+      transition: all 0.2s ease;
+    }
+    .app-toast-box.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="prototype-viewport-wrapper">
+    
+    <!-- DEMO TOOLBAR: Interactive Testing Controls for Evaluators & Reviewers -->
+    <header class="demo-toolbar" aria-label="Demo Testing Controls">
+      <div class="demo-toolbar-header">
+        <div class="demo-toolbar-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+            <polyline points="2 17 12 22 22 17"></polyline>
+            <polyline points="2 12 12 17 22 12"></polyline>
+          </svg>
+          <span>Zupit Prototype Controller</span>
+        </div>
+        <span class="demo-toolbar-tag" id="demo-current-screen-tag">Screen 1: New Order</span>
+      </div>
+      
+      <!-- Frame Jumpers & Next State Walkthrough -->
+      <div class="demo-toolbar-actions">
+        <button type="button" class="demo-pill-btn active demo-frame-btn" data-state="placed" title="Order Placed Frame">Placed</button>
+        <button type="button" class="demo-pill-btn demo-frame-btn" data-state="assigned" title="Rider Assigned Frame">Rider Assigned</button>
+        <button type="button" class="demo-pill-btn demo-frame-btn" data-state="buying" title="Buying Medicines Frame">Buying</button>
+        <button type="button" class="demo-pill-btn demo-frame-btn" data-state="bill_online" title="Bill Ready Online Payment Frame">Bill (Online)</button>
+        <button type="button" class="demo-pill-btn demo-frame-btn" data-state="bill_cash" title="Bill Ready Cash Payment Frame">Bill (Cash)</button>
+        <button type="button" class="demo-pill-btn demo-frame-btn" data-state="out_for_delivery" title="Out for Delivery Frame">Out for Delivery</button>
+        <button type="button" class="demo-pill-btn demo-frame-btn" data-state="cancelled" title="Cancelled Order Frame">Cancelled</button>
+        <button type="button" class="demo-pill-btn demo-frame-btn" data-state="delivered" title="Delivered Frame">Delivered</button>
+      </div>
+
+      <!-- State Simulation Toggles -->
+      <div class="demo-toolbar-actions" style="margin-top: 2px;">
+        <button type="button" class="demo-pill-btn" id="demo-next-state-btn" style="background:#1D3F8F; color:#FFFFFF; font-weight:600;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+          <span>Next State</span>
+        </button>
+        <button type="button" class="demo-pill-btn" id="demo-toggle-offline">Toggle Offline Banner</button>
+        <button type="button" class="demo-pill-btn" id="demo-toggle-upload-error">Test Upload Error</button>
+        <button type="button" class="demo-pill-btn" id="demo-toggle-returning">Toggle Returning Card</button>
+        <button type="button" class="demo-pill-btn warning-pill" id="demo-trigger-unavailable">Item Unavailable Alert</button>
+      </div>
+    </header>
+
+    <!-- MOBILE DEVICE SHELL (360x800 Standard Mobile Dimensions) -->
+    <main class="mobile-device-shell" id="zupit-mobile-app">
+      
+      <!-- Toast Notification -->
+      <div class="app-toast-box" id="app-toast">Notification</div>
+
+      <!-- Simulated Mobile Status Bar (9:41 AM, Cellular, Wi-Fi, Battery) -->
+      <div class="device-status-bar" aria-hidden="true">
+        <span class="status-time">9:41</span>
+        <div class="status-icons">
+          <!-- Cellular -->
+          <svg class="status-icon-svg" viewBox="0 0 24 24">
+            <rect x="2" y="16" width="3" height="5" rx="1"/>
+            <rect x="8" y="12" width="3" height="9" rx="1"/>
+            <rect x="14" y="8" width="3" height="13" rx="1"/>
+            <rect x="20" y="4" width="3" height="17" rx="1"/>
+          </svg>
+          <!-- Wi-Fi -->
+          <svg class="status-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
+            <path d="M1.42 9a16 16 0 0 1 21.16 0"/>
+            <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+            <line x1="12" y1="20" x2="12.01" y2="20" stroke-width="3"/>
+          </svg>
+          <!-- Battery -->
+          <svg class="status-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="1" y="6" width="18" height="12" rx="2"/>
+            <path d="M23 10v4" stroke-width="2"/>
+            <rect x="3" y="8" width="12" height="8" fill="currentColor"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- SHARED TOP BAR: Wordmark, Hindi/English Toggle, Help Icon -->
+      <nav class="app-top-bar" aria-label="Main Navigation">
+        <div class="brand-wrapper" id="brand-logo-trigger" role="button" tabindex="0" title="Zupit Jamui - Go to Home">
+          <span class="brand-name">Zupit</span>
+          <span class="brand-dot" aria-hidden="true"></span>
+        </div>
+        
+        <div class="top-bar-controls">
+          <!-- Hindi/English Toggle -->
+          <button type="button" class="lang-toggle-btn" id="lang-toggle-btn" aria-label="Switch Language Between English and Hindi">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="2" y1="12" x2="22" y2="12"></line>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+            </svg>
+            <span id="lang-toggle-text">हिन्दी / EN</span>
+          </button>
+
+          <!-- Help Icon -->
+          <button type="button" class="help-icon-btn" id="help-top-btn" aria-label="Open Help and Customer Support">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+              <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+          </button>
+        </div>
+      </nav>
+
+      <!-- OFFLINE ALERT BANNER -->
+      <div class="offline-banner hidden" id="offline-alert-banner" role="alert">
+        <div class="offline-text-wrap">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="1" y1="1" x2="23" y2="23"></line>
+            <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path>
+            <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path>
+            <path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path>
+            <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path>
+            <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+            <line x1="12" y1="20" x2="12.01" y2="20"></line>
+          </svg>
+          <span id="offline-banner-text">No internet. Your order is not placed yet.</span>
+        </div>
+        <button type="button" class="offline-close-btn" id="offline-close-btn" aria-label="Dismiss offline banner">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <!-- MAIN SCROLLABLE CANVAS -->
+      <div class="app-screen-container" id="app-scroll-canvas">
+
+        <!-- ========================================== -->
+        <!-- SCREEN 1: NEW ORDER (HOME SCREEN)          -->
+        <!-- ========================================== -->
+        <section class="screen-view active" id="screen-1-view">
+          <div class="screen-padding">
+            
+            <!-- Returning Customer Quick Card -->
+            <div class="returning-customer-card" id="returning-customer-card" style="display: none;">
+              <div class="returning-card-header">
+                <span class="returning-badge">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M20 6L9 17l-5-5"></path>
+                  </svg>
+                  <span id="returning-badge-text">Quick Reorder</span>
+                </span>
+              </div>
+              <p class="returning-prompt" id="returning-customer-prompt">
+                Welcome back, <strong>Sunita</strong>. Deliver to Station Road, near Gandhi Chowk?
+              </p>
+              <div class="returning-actions">
+                <button type="button" class="returning-btn-yes" id="btn-returning-yes">
+                  Yes, use this
+                </button>
+                <button type="button" class="returning-btn-change" id="btn-returning-change">
+                  Change
+                </button>
+              </div>
+            </div>
+
+            <!-- Visual Hero Card -->
+            <div class="home-hero-card">
+              <span class="hero-tag" id="hero-tag-text">Fast Jamui Delivery</span>
+              <h1 class="hero-heading" id="hero-heading-text">Medicines delivered to your door</h1>
+              <p class="hero-subhead" id="hero-subhead-text">Free delivery on every order. You pay after you see the bill.</p>
+            </div>
+
+            <!-- Error message if neither medicines nor prescriptions added -->
+            <div class="form-error-msg" id="items-error-msg" style="padding: 0 4px;"></div>
+
+            <!-- SECTION 1: WHAT DO YOU NEED? -->
+            <div class="order-section-card" id="order-section-1">
+              <div class="section-title-wrap">
+                <div class="section-title-left">
+                  <span class="section-num-circle">1</span>
+                  <h2 class="section-title" id="sec1-title-text">What do you need?</h2>
+                </div>
+                <span class="section-step-indicator">Step 1 of 3</span>
+              </div>
+
+              <!-- Segmented Control (Type vs Upload) -->
+              <div class="segmented-control" role="tablist">
+                <button type="button" class="segment-btn active" id="seg-type-btn" role="tab" aria-selected="true">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 20h9"></path>
+                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                  </svg>
+                  <span id="tab-type-label">Type medicines</span>
+                </button>
+                <button type="button" class="segment-btn" id="seg-upload-btn" role="tab" aria-selected="false">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                  </svg>
+                  <span id="tab-upload-label">Upload prescription</span>
+                </button>
+              </div>
+
+              <!-- TYPE MEDICINES VIEW -->
+              <div id="type-medicines-container" style="display: flex; flex-direction: column; gap: 12px;">
+                <div class="medicines-list" id="medicine-rows-list">
+                  <!-- Medicine rows injected dynamically by app.js -->
+                </div>
+                
+                <button type="button" class="add-medicine-link" id="add-medicine-btn">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="16"></line>
+                    <line x1="8" y1="12" x2="16" y2="12"></line>
+                  </svg>
+                  <span id="add-medicine-label">+ Add another medicine</span>
+                </button>
+
+                <!-- Brand preference notes field -->
+                <div class="form-group" style="margin-top: 4px;">
+                  <label class="form-label" for="field-brand-notes" id="notes-field-label">Any brand preference or note?</label>
+                  <input type="text" class="form-input" id="field-brand-notes" placeholder="e.g. Any generic brand is fine, or call if brand differs">
+                </div>
+              </div>
+
+              <!-- UPLOAD PRESCRIPTION VIEW -->
+              <div id="upload-prescriptions-container" style="display: none; flex-direction: column; gap: 12px;">
+                <div class="prescription-upload-box">
+                  <div class="upload-icon-circle">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                      <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                      <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                  </div>
+                  <span class="upload-prompt-text" id="upload-box-title">Take a photo or upload prescription</span>
+                  
+                  <div class="upload-actions-row">
+                    <input type="file" id="file-camera-input" accept="image/jpeg,image/png,image/webp,application/pdf" capture="environment" style="display: none;">
+                    <input type="file" id="file-gallery-input" accept="image/jpeg,image/png,image/webp,application/pdf" multiple style="display: none;">
+                    <button type="button" class="upload-action-btn" id="btn-upload-camera">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                        <circle cx="12" cy="13" r="4"></circle>
+                      </svg>
+                      <span id="upload-camera-label">Camera</span>
+                    </button>
+                    <button type="button" class="upload-action-btn" id="btn-upload-gallery">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                      </svg>
+                      <span id="upload-gallery-label">Gallery</span>
+                    </button>
+                  </div>
+
+                  <!-- Upload failed retry state -->
+                  <div class="upload-error-card" id="upload-error-box" style="display: none;">
+                    <span id="upload-error-text">Upload failed. Check network & tap retry.</span>
+                    <button type="button" class="upload-retry-btn" id="btn-upload-retry">Retry</button>
+                  </div>
+
+                  <!-- Thumbnails of up to 5 images -->
+                  <div class="prescription-thumbnails" id="prescription-thumbnails-list"></div>
+
+                  <!-- Consent checkbox when prescription is attached -->
+                  <div class="rx-consent-container" id="rx-consent-wrap" style="display: none;">
+                    <input type="checkbox" id="rx-consent-check" class="rx-consent-checkbox">
+                    <label for="rx-consent-check" class="rx-consent-label" id="rx-consent-label-text">I agree to Zupit using my prescription to fulfil this order.</label>
+                  </div>
+                  <span class="form-error-msg" id="err-rx-consent"></span>
+
+                  <!-- Privacy reassurance line -->
+                  <p class="privacy-notice" id="upload-privacy-text">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                    <span>Only you, your rider and Zupit can see this.</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- SECTION 2: DELIVERY DETAILS -->
+            <div class="order-section-card" id="order-section-2">
+              <div class="section-title-wrap">
+                <div class="section-title-left">
+                  <span class="section-num-circle">2</span>
+                  <h2 class="section-title" id="sec2-title-text">Delivery details</h2>
+                </div>
+                <span class="section-step-indicator">Step 2 of 3</span>
+              </div>
+
+              <!-- Full Name -->
+              <div class="form-group">
+                <label class="form-label form-label-required" for="field-full-name" id="label-full-name">Full name</label>
+                <input type="text" class="form-input" id="field-full-name" placeholder="Enter your full name" autocomplete="name">
+                <span class="form-error-msg" id="err-name"></span>
+              </div>
+
+              <!-- Mobile Number -->
+              <div class="form-group">
+                <label class="form-label form-label-required" for="field-mobile" id="label-mobile">Mobile number</label>
+                <div class="form-control-wrap">
+                  <span class="form-input-prefix">+91</span>
+                  <input type="tel" class="form-input with-prefix" id="field-mobile" placeholder="10-digit mobile number" maxlength="10" inputmode="numeric" autocomplete="tel">
+                </div>
+                <span class="form-helper" id="mobile-helper-text">Your rider will call this number.</span>
+                <span class="form-error-msg" id="err-mobile"></span>
+              </div>
+
+              <!-- Address -->
+              <div class="form-group">
+                <label class="form-label form-label-required" for="field-address" id="label-address">House or flat, street or area</label>
+                <input type="text" class="form-input" id="field-address" placeholder="e.g. House 14, Station Road" autocomplete="street-address">
+                <span class="form-error-msg" id="err-address"></span>
+              </div>
+
+              <!-- Landmark -->
+              <div class="form-group">
+                <label class="form-label form-label-required" for="field-landmark" id="label-landmark">Landmark</label>
+                <input type="text" class="form-input" id="field-landmark" placeholder="Example: near Gandhi Chowk">
+                <span class="form-helper" id="landmark-helper-text">Helps the rider find you quickly</span>
+                <span class="form-error-msg" id="err-landmark"></span>
+              </div>
+
+              <!-- Pincode -->
+              <div class="form-group">
+                <label class="form-label form-label-required" for="field-pincode" id="label-pincode">Pincode</label>
+                <input type="text" class="form-input" id="field-pincode" placeholder="6-digit pincode (e.g. 811307)" maxlength="6" inputmode="numeric" autocomplete="postal-code">
+                
+                <!-- Live Serviceable Status -->
+                <div class="pincode-status-wrap serviceable" id="pincode-valid-badge">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M20 6L9 17l-5-5"></path>
+                  </svg>
+                  <span id="pincode-valid-text">Serviceable in Jamui (Delivery in 30-45 mins)</span>
+                </div>
+                <div class="pincode-status-wrap unserviceable" id="pincode-invalid-badge">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                    <line x1="9" y1="9" x2="15" y2="15"></line>
+                  </svg>
+                  <span id="pincode-invalid-text">We do not deliver to this area yet.</span>
+                </div>
+                <span class="form-error-msg" id="err-pincode"></span>
+              </div>
+
+              <!-- Use My Current Location Button -->
+              <button type="button" class="location-btn-link" id="use-current-location-btn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                  <circle cx="12" cy="10" r="3"></circle>
+                </svg>
+                <span id="use-current-location-text">Use my current location</span>
+              </button>
+            </div>
+
+            <!-- SECTION 3: PAYMENT -->
+            <div class="order-section-card" id="order-section-3">
+              <div class="section-title-wrap">
+                <div class="section-title-left">
+                  <span class="section-num-circle">3</span>
+                  <h2 class="section-title" id="sec3-title-text">Payment</h2>
+                </div>
+                <span class="section-step-indicator">Step 3 of 3</span>
+              </div>
+
+              <div class="payment-radios-grid">
+                <!-- COD Option -->
+                <div class="payment-radio-card selected" id="pay-card-cod" role="radio" aria-checked="true">
+                  <div class="custom-radio-circle">
+                    <svg class="custom-radio-check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  </div>
+                  <div class="radio-content-wrap">
+                    <span class="radio-title" id="pay-cod-title">Cash on delivery</span>
+                    <span class="radio-sub" id="pay-cod-sub">Pay in cash to the rider at your door</span>
+                  </div>
+                </div>
+
+                <!-- Online After Bill Option -->
+                <div class="payment-radio-card" id="pay-card-online" role="radio" aria-checked="false">
+                  <div class="custom-radio-circle">
+                    <svg class="custom-radio-check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  </div>
+                  <div class="radio-content-wrap">
+                    <span class="radio-title" id="pay-online-title">Pay online after bill</span>
+                    <span class="radio-sub" id="pay-online-sub">Pay via UPI (GPay, PhonePe, Paytm) after rider sends the pharmacy bill</span>
+                  </div>
+                </div>
+              </div>
+
+              <p class="form-helper" id="payment-assurance-text" style="color: var(--color-primary); font-weight: 500;">
+                You will see the exact bill before you pay.
+              </p>
+            </div>
+
+          </div>
+
+          <!-- Pinned Sticky Bottom Primary Action -->
+          <div class="sticky-action-container">
+            <button type="button" class="btn-primary" id="place-order-submit-btn">
+              <span id="place-order-btn-text">Place order</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </button>
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- SCREEN 2: ORDER PLACED                     -->
+        <!-- ========================================== -->
+        <section class="screen-view" id="screen-2-view">
+          <div class="order-placed-wrap">
+            <div class="success-icon-badge">
+              <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M20 6L9 17l-5-5"></path>
+              </svg>
+            </div>
+            
+            <h1 class="success-title" id="placed-success-title">Order placed</h1>
+            <span class="order-id-chip" id="placed-order-id">ZP-10482</span>
+
+            <!-- Order Summary Card -->
+            <div class="placed-summary-card">
+              <div class="summary-row">
+                <span class="summary-label">Items ordered:</span>
+                <span class="summary-val" id="summary-val-items">1 Medicine</span>
+              </div>
+              <div class="summary-row">
+                <span class="summary-label">Deliver to:</span>
+                <span class="summary-val" id="summary-val-address">Station Road, Jamui</span>
+              </div>
+              <div class="summary-row">
+                <span class="summary-label">Payment mode:</span>
+                <span class="summary-val" id="summary-val-payment">Cash on delivery</span>
+              </div>
+              <div class="summary-row">
+                <span class="summary-label">Estimated time:</span>
+                <span class="summary-val" style="color: var(--color-primary);">30 - 45 mins</span>
+              </div>
+            </div>
+
+            <!-- Confirmation Line -->
+            <div class="placed-instruction-line">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+              </svg>
+              <span id="placed-confirm-line">A Zupit rider will call you shortly to confirm.</span>
+            </div>
+
+            <p class="placed-sms-note" id="placed-sms-line">We also sent the tracking link by SMS.</p>
+          </div>
+
+          <!-- Sticky Buttons for Screen 2 -->
+          <div class="sticky-action-container" style="display: flex; flex-direction: column; gap: 8px;">
+            <button type="button" class="btn-primary" id="btn-track-placed-order">
+              <span id="track-placed-btn-text">Track my order</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </button>
+            <button type="button" class="btn-secondary" id="btn-placed-call-us">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+              </svg>
+              <span id="placed-call-us-text">Call us</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- SCREEN 3: TRACK ORDER ENTRY (LOOKUP)       -->
+        <!-- ========================================== -->
+        <section class="screen-view" id="screen-3-view">
+          <div class="screen-padding">
+            
+            <div>
+              <h1 class="hero-heading" id="track-entry-title">Track order</h1>
+              <p class="hero-subhead" id="track-entry-sub">Enter mobile number and order ID to check status</p>
+            </div>
+
+            <!-- Recent order card on this device -->
+            <div class="recent-order-tappable-card" id="recent-order-tappable-card">
+              <div class="recent-order-top">
+                <span class="returning-badge" id="recent-order-badge-text">Recent order on this device</span>
+                <span class="order-id-chip" id="recent-card-order-id">ZP-10482</span>
+              </div>
+              <p style="font-size: 15px; font-weight: 600; color: var(--color-text-primary);" id="recent-card-status">
+                Order Placed • In progress
+              </p>
+              <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--color-text-secondary);">
+                <span id="recent-card-address">Station Road, Jamui</span>
+                <span style="color: var(--color-primary); font-weight: 600;">Tap to view →</span>
+              </div>
+            </div>
+
+            <!-- Lookup Form -->
+            <div class="track-lookup-card">
+              <div class="form-group">
+                <label class="form-label" for="field-track-mobile" id="label-track-mobile">Mobile number</label>
+                <div class="form-control-wrap">
+                  <span class="form-input-prefix">+91</span>
+                  <input type="tel" class="form-input with-prefix" id="field-track-mobile" placeholder="10-digit mobile number" maxlength="10">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="field-track-id" id="label-track-id">Order ID</label>
+                <input type="text" class="form-input" id="field-track-id" placeholder="e.g. ZP-10482">
+              </div>
+
+              <div class="lookup-error-box" id="track-lookup-error">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="8" x2="12" y2="12"></line>
+                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <span id="track-error-text">We could not find this order. Check the number and try again.</span>
+              </div>
+
+              <button type="button" class="btn-primary" id="btn-track-lookup-submit" style="margin-top: 6px;">
+                <span id="track-lookup-btn-text">Track order</span>
+              </button>
+            </div>
+
+            <!-- Empty State Card -->
+            <div class="empty-orders-card" id="empty-orders-card" style="display: none;">
+              <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" stroke-width="1.8">
+                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+              </svg>
+              <p style="font-size: 15px; color: var(--color-text-secondary);" id="empty-orders-text">No recent orders found on this phone.</p>
+              <button type="button" class="btn-primary" id="btn-empty-place-order" style="max-width: 200px;">
+                <span id="empty-place-btn-text">Place an order</span>
+              </button>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- SCREEN 4: ORDER TRACKING (ZERO LOGIN)      -->
+        <!-- ========================================== -->
+        <section class="screen-view" id="screen-4-view">
+          <div class="screen-padding">
+            
+            <!-- Order Header with Order ID and Status Pill -->
+            <div class="tracking-header-card">
+              <div>
+                <span style="font-size: 13px; color: var(--color-text-secondary);">Tracking Order</span>
+                <div style="font-size: 18px; font-weight: 700; color: var(--color-text-primary);" id="tracking-order-id">ZP-10482</div>
+              </div>
+              <div class="status-pill status-placed" id="tracking-status-pill">
+                <span class="status-dot"></span>
+                <span id="status-pill-text">Placed</span>
+              </div>
+            </div>
+
+            <!-- Vertical Status Stepper -->
+            <div class="stepper-card">
+              <div id="stepper-nodes-wrap">
+                <!-- Injected dynamically by app.js -->
+              </div>
+            </div>
+
+            <!-- Rider Card (Appears after assignment) -->
+            <div class="rider-card" id="rider-info-card" style="display: none;">
+              <div class="section-title" id="rider-card-title">Assigned Delivery Rider</div>
+              
+              <div class="rider-info-row">
+                <div class="rider-avatar" id="rider-avatar-text">SK</div>
+                <div class="rider-text-details">
+                  <span class="rider-name" id="rider-name-text">Sunil Kumar</span>
+                  <span class="rider-vehicle" id="rider-vehicle-text">Vehicle: BR-46-A-1284 (Honda Activa)</span>
+                  <span class="rider-rating-pill">4.9 ★ • Jamui Verified</span>
+                </div>
+              </div>
+
+              <div class="rider-actions-grid">
+                <a href="tel:+916207856200" class="rider-call-btn">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                  </svg>
+                  <span id="call-rider-text">Call</span>
+                </a>
+                <a href="https://wa.me/916207856200" target="_blank" rel="noopener noreferrer" class="rider-wa-btn">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                  </svg>
+                  <span id="wa-rider-text">WhatsApp</span>
+                </a>
+              </div>
+            </div>
+
+            <!-- Bill Card (Appears once rider uploads bill) -->
+            <div class="bill-card" id="bill-info-card" style="display: none;">
+              <div class="bill-top-row">
+                <span class="section-title" id="bill-card-title">Pharmacy Bill Ready</span>
+                <span class="pincode-status-wrap serviceable" style="display:flex;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"></path></svg>
+                  <span>Verified</span>
+                </span>
+              </div>
+
+              <!-- Bill photo thumbnail with interactive lightbox trigger -->
+              <div class="bill-photo-preview" id="bill-photo-preview-box" role="button" tabindex="0" title="Click to view pharmacy bill photo">
+                <img src="" class="bill-thumb-img" id="bill-thumb-img-preview" alt="Pharmacy Bill Thumbnail">
+                <div class="bill-photo-text">
+                  <span class="bill-photo-title">Jan Aushadhi Kendra, Station Road</span>
+                  <p class="bill-photo-sub" id="bill-photo-tap-label">Tap to view pharmacy bill photo</p>
+                </div>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="2">
+                  <polyline points="15 3 21 3 21 9"></polyline>
+                  <polyline points="9 21 3 21 3 15"></polyline>
+                  <line x1="21" y1="3" x2="14" y2="10"></line>
+                  <line x1="3" y1="21" x2="10" y2="14"></line>
+                </svg>
+              </div>
+
+              <!-- Bill Amount in large digits -->
+              <div class="bill-amount-display">
+                <span class="bill-amount-label" id="bill-amount-label">Total bill amount to pay</span>
+                <span class="bill-amount-large" id="bill-amount-display">₹ 486</span>
+              </div>
+
+              <!-- Orange Pay Now Button (if online payment) or Cash note -->
+              <button type="button" class="btn-accent" id="btn-bill-pay-now" style="display: flex;">
+                <span id="bill-pay-btn-text">Pay now</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                  <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+              </button>
+
+              <div id="bill-cod-rider-note" style="display: none; font-size: 15px; font-weight: 600; color: var(--color-text-secondary); background: var(--color-surface-container); padding: 10px 12px; border-radius: var(--radius-md); text-align: center;">
+                Pay ₹ 486 in cash to the rider
+              </div>
+            </div>
+
+            <!-- Delivery Code Card (Appears when out for delivery) -->
+            <div class="delivery-code-card" id="delivery-code-card" style="display: none;">
+              <span class="delivery-code-title" id="delivery-code-title">Tell this code to the rider:</span>
+              <div class="code-digits-grid">
+                <span class="code-digit-box" id="code-d1">4</span>
+                <span class="code-digit-box" id="code-d2">8</span>
+                <span class="code-digit-box" id="code-d3">2</span>
+                <span class="code-digit-box" id="code-d4">9</span>
+              </div>
+              <span class="code-helper-text" id="delivery-code-helper">Rider will verify this 4-digit code at delivery</span>
+            </div>
+
+            <!-- Collapsible Order Details Section -->
+            <div class="order-accordion-card">
+              <button type="button" class="accordion-header-btn" id="order-accordion-trigger">
+                <span id="order-accordion-title">Order details</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="accordion-chevron" style="transition: transform 0.2s;">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </button>
+              
+              <div class="accordion-body collapsed" id="accordion-body-details">
+                <div id="accordion-items-list" style="display: flex; flex-direction: column; gap: 6px;"></div>
+                <div class="summary-row" style="margin-top: 4px; border-top: 1px solid var(--color-surface-dim); padding-top: 8px;">
+                  <span class="summary-label">Delivery Address:</span>
+                  <span class="summary-val" id="accordion-address-val">Station Road, Gandhi Chowk</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Cancel Order text link (visible only before buying step) -->
+            <button type="button" class="cancel-order-link" id="cancel-order-link-btn">
+              Cancel order
+            </button>
+
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- SCREEN 5: ITEM NOT AVAILABLE               -->
+        <!-- ========================================== -->
+        <section class="screen-view" id="screen-5-view">
+          <div class="screen-padding">
+            
+            <div class="item-unavailable-banner-card">
+              <div class="unavailable-header">
+                <svg class="unavailable-warning-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                  <line x1="12" y1="9" x2="12" y2="13"></line>
+                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+                <div>
+                  <h1 class="unavailable-text" id="item-unavailable-title">Item not available at pharmacy</h1>
+                  <p style="font-size: 14px; color: var(--color-text-secondary); margin-top: 4px;" id="item-unavailable-notice">
+                    Pantoprazole 40 mg was not available at the pharmacy.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Three Action Choices -->
+              <div class="unavailable-choices-stack">
+                <button type="button" class="choice-option-btn primary-choice" id="choice-skip-item">
+                  <span id="choice-skip-text">Skip it (deliver remaining medicines)</span>
+                </button>
+                <button type="button" class="choice-option-btn" id="choice-call-me">
+                  <span id="choice-call-text">Call me (to discuss alternatives)</span>
+                </button>
+                <button type="button" class="choice-option-btn cancel-choice" id="choice-cancel-unavailable">
+                  <span id="choice-cancel-text">Cancel order</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- SCREEN 6: PAYMENT                          -->
+        <!-- ========================================== -->
+        <section class="screen-view" id="screen-6-view">
+          <div class="screen-padding">
+            
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <button type="button" class="help-icon-btn" id="btn-back-from-payment" aria-label="Back to order tracking">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+              </button>
+              <h1 class="hero-heading" id="payment-screen-title">Pay Pharmacy Bill</h1>
+            </div>
+
+            <!-- Amount Breakdown Summary Card -->
+            <div class="payment-amount-summary-card">
+              <div class="pay-row">
+                <span id="pay-label-bill-total">Pharmacy bill total</span>
+                <span style="font-weight: 600; color: var(--color-text-primary);" id="pay-val-bill-total">₹ 486</span>
+              </div>
+              <div class="pay-row">
+                <span id="pay-label-delivery">Delivery fee</span>
+                <span style="font-weight: 600; color: var(--color-success);" id="pay-val-delivery">₹ 0 (Free)</span>
+              </div>
+              <div class="pay-row total-row">
+                <span id="pay-label-payable">Total payable</span>
+                <span id="pay-val-payable">₹ 486</span>
+              </div>
+            </div>
+
+            <!-- UPI and Payment Options -->
+            <div class="upi-options-card">
+              <span class="section-title" id="pay-upi-title">Select UPI or Payment Mode</span>
+
+              <!-- PhonePe -->
+              <div class="upi-brand-row selected" data-method="phonepe">
+                <div class="upi-brand-logo">Pe</div>
+                <span class="upi-brand-name">PhonePe</span>
+                <span class="custom-radio-circle"><span class="custom-radio-dot" style="display:block;"></span></span>
+              </div>
+
+              <!-- Google Pay -->
+              <div class="upi-brand-row" data-method="gpay">
+                <div class="upi-brand-logo" style="color:#1A73E8;">G</div>
+                <span class="upi-brand-name">Google Pay (GPay)</span>
+                <span class="custom-radio-circle"><span class="custom-radio-dot"></span></span>
+              </div>
+
+              <!-- Paytm -->
+              <div class="upi-brand-row" data-method="paytm">
+                <div class="upi-brand-logo" style="color:#002970;">Pay</div>
+                <span class="upi-brand-name">Paytm UPI</span>
+                <span class="custom-radio-circle"><span class="custom-radio-dot"></span></span>
+              </div>
+
+              <!-- Other UPI -->
+              <div class="upi-brand-row" data-method="other_upi">
+                <div class="upi-brand-logo">@</div>
+                <span class="upi-brand-name" id="pay-other-upi-label">Other UPI ID</span>
+                <span class="custom-radio-circle"><span class="custom-radio-dot"></span></span>
+              </div>
+
+              <!-- Card option -->
+              <div class="upi-brand-row" data-method="card">
+                <div class="upi-brand-logo">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                    <line x1="1" y1="10" x2="23" y2="10"></line>
+                  </svg>
+                </div>
+                <span class="upi-brand-name" id="pay-card-label">Debit / Credit Card</span>
+                <span class="custom-radio-circle"><span class="custom-radio-dot"></span></span>
+              </div>
+            </div>
+
+            <!-- Payment Success Card (Interactive simulation) -->
+            <div class="order-section-card" id="payment-success-card" style="display: none; text-align: center; align-items: center;">
+              <div class="success-icon-badge">✓</div>
+              <h2 class="section-title" id="pay-success-title" style="color: var(--color-success); font-size: 20px;">Payment successful!</h2>
+              <p style="font-size: 14px; color: var(--color-text-secondary);" id="pay-success-msg">
+                ₹ 486 paid successfully. Receipt sent via SMS.
+              </p>
+              <button type="button" class="btn-primary" id="btn-payment-success-done" style="margin-top: 10px;">
+                <span id="pay-success-back-text">Back to tracking</span>
+              </button>
+            </div>
+
+            <!-- Payment Failed Card (Interactive simulation) -->
+            <div class="order-section-card" id="payment-fail-card" style="display: none; border-color: var(--color-error); text-align: center; align-items: center;">
+              <div style="width: 52px; height: 52px; border-radius: var(--radius-pill); background: var(--color-error-bg); color: var(--color-error); display: flex; align-items: center; justify-content: center; font-size: 24px;">✕</div>
+              <h2 class="section-title" id="pay-fail-title" style="color: var(--color-error);">Payment failed</h2>
+              <p style="font-size: 14px; color: var(--color-text-secondary);" id="pay-fail-msg">
+                Bank server did not respond. No money was deducted.
+              </p>
+              <div style="display: flex; gap: 8px; width: 100%; margin-top: 10px;">
+                <button type="button" class="btn-primary" id="btn-payment-retry" style="flex:1;">
+                  <span id="pay-retry-text">Try again</span>
+                </button>
+                <button type="button" class="btn-secondary" id="btn-payment-pay-cash" style="flex:1;">
+                  <span id="pay-cash-instead-text">Pay cash instead</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Sticky Bottom Pay Button -->
+          <div class="sticky-action-container">
+            <button type="button" class="btn-primary" id="btn-execute-payment">
+              <span id="pay-execute-btn-text">Pay ₹ 486</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- SCREEN 7: DELIVERED                        -->
+        <!-- ========================================== -->
+        <section class="screen-view" id="screen-7-view">
+          <div class="delivered-screen-wrap">
+            <div class="success-icon-badge">
+              <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+
+            <h1 class="success-title" id="delivered-title">Medicines Delivered</h1>
+            <p class="hero-subhead" id="delivered-sub">Thank you for trusting Zupit Jamui!</p>
+
+            <!-- Bill Paid Summary -->
+            <div class="placed-summary-card">
+              <div class="summary-row">
+                <span class="summary-label" id="delivered-summary-paid-label">Total bill paid:</span>
+                <span class="summary-val" id="delivered-summary-paid-val" style="font-size: 18px; color: var(--color-primary);">₹ 486</span>
+              </div>
+              <div class="summary-row">
+                <span class="summary-label">Delivered by:</span>
+                <span class="summary-val">Sunil Kumar (BR-46-A-1284)</span>
+              </div>
+              <div class="summary-row">
+                <span class="summary-label">Delivered at:</span>
+                <span class="summary-val">10:48 AM, Today</span>
+              </div>
+            </div>
+
+            <!-- 1 to 5 Star Rating -->
+            <div class="order-section-card" style="width: 100%;">
+              <span class="section-title" id="delivered-rate-title">Rate your delivery experience</span>
+              
+              <div class="rating-stars-row" role="radiogroup" aria-label="Star Rating">
+                <button type="button" class="star-btn active" data-star="1" aria-label="1 star">★</button>
+                <button type="button" class="star-btn active" data-star="2" aria-label="2 stars">★</button>
+                <button type="button" class="star-btn active" data-star="3" aria-label="3 stars">★</button>
+                <button type="button" class="star-btn active" data-star="4" aria-label="4 stars">★</button>
+                <button type="button" class="star-btn active" data-star="5" aria-label="5 stars">★</button>
+              </div>
+
+              <textarea class="rating-comment-box" id="feedback-textarea" placeholder="Any feedback for the rider or pharmacy? (Optional)"></textarea>
+            </div>
+
+          </div>
+
+          <!-- Sticky Buttons for Screen 7 -->
+          <div class="sticky-action-container" style="display: flex; flex-direction: column; gap: 8px;">
+            <button type="button" class="btn-primary" id="btn-delivered-done">
+              <span id="delivered-done-text">Done</span>
+            </button>
+            <button type="button" class="btn-secondary" id="btn-delivered-reorder">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="1 4 1 10 7 10"></polyline>
+                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+              </svg>
+              <span id="delivered-reorder-text">Order again</span>
+            </button>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- SHARED BOTTOM NAVIGATION BAR: ONLY TWO ITEMS (Order & Track order) -->
+      <nav class="app-bottom-bar" aria-label="Bottom Navigation">
+        <button type="button" class="nav-item-btn active" id="nav-order-btn" aria-label="Place an Order">
+          <svg class="nav-icon-svg" viewBox="0 0 24 24">
+            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <path d="M16 10a4 4 0 0 1-8 0"></path>
+          </svg>
+          <span id="nav-order-label">Order</span>
+        </button>
+        <button type="button" class="nav-item-btn" id="nav-track-btn" aria-label="Track Order">
+          <svg class="nav-icon-svg" viewBox="0 0 24 24">
+            <rect x="1" y="3" width="15" height="13" rx="1"></rect>
+            <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+            <circle cx="5.5" cy="18.5" r="2.5"></circle>
+            <circle cx="18.5" cy="18.5" r="2.5"></circle>
+          </svg>
+          <span id="nav-track-label">Track order</span>
+        </button>
+      </nav>
+
+      <!-- ========================================== -->
+      <!-- MODALS & OVERLAYS                          -->
+      <!-- ========================================== -->
+
+      <!-- 1. HELP SHEET BOTTOM MODAL -->
+      <div class="modal-overlay" id="help-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="help-sheet-title">
+        <div class="modal-sheet">
+          <div class="sheet-handle"></div>
+          <h2 class="sheet-title" id="help-sheet-title">Need help?</h2>
+          <p style="font-size: 14px; color: var(--color-text-secondary);" id="help-sheet-sub">
+            Our Jamui logistics support team is ready to assist you.
+          </p>
+
+          <div class="sheet-actions-stack">
+            <!-- Call Us Direct Link -->
+            <a href="tel:+916207856200" class="sheet-action-row" id="link-help-call">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="2">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+              </svg>
+              <span id="help-sheet-call-label">Call us: +91 62078 56200</span>
+            </a>
+
+            <!-- WhatsApp Direct Link -->
+            <a href="https://wa.me/916207856200" target="_blank" rel="noopener noreferrer" class="sheet-action-row" id="link-help-wa">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#128C7E" stroke-width="2">
+                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+              </svg>
+              <span id="help-sheet-wa-label">WhatsApp us: +91 62078 56200</span>
+            </a>
+          </div>
+
+          <p style="font-size: 13px; color: var(--color-text-muted); text-align: center; margin-top: 4px;" id="help-sheet-hours">
+            Open every day: 8:00 AM – 10:00 PM
+          </p>
+
+          <button type="button" class="btn-secondary" id="close-help-sheet-btn" style="margin-top: 6px;">
+            <span>Close</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 2. FULLSCREEN BILL PHOTO LIGHTBOX -->
+      <div class="lightbox-modal" id="bill-lightbox-overlay" role="dialog" aria-modal="true" aria-label="Pharmacy Bill Photo Fullscreen">
+        <div class="lightbox-top-bar">
+          <span style="font-size: 15px; font-weight: 600;">Jan Aushadhi Kendra Pharmacy Bill</span>
+          <button type="button" class="lightbox-close-btn" id="close-lightbox-btn" aria-label="Close Bill Photo">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        <div class="lightbox-content">
+          <div class="lightbox-img-card">
+            <img src="" id="lightbox-bill-img" alt="Pharmacy Bill" style="width: 100%; height: auto; display: block; border-radius: var(--radius-sm);">
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. CANCEL ORDER CONFIRMATION MODAL -->
+      <div class="modal-overlay" id="cancel-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="confirm-cancel-title">
+        <div class="modal-sheet">
+          <div class="sheet-handle"></div>
+          <h2 class="sheet-title" id="confirm-cancel-title" style="color: var(--color-error);">Cancel order?</h2>
+          <p style="font-size: 15px; color: var(--color-text-primary);" id="confirm-cancel-msg">
+            Are you sure you want to cancel this order? The rider has not purchased items yet.
+          </p>
+          <div style="display: flex; gap: 10px; margin-top: 10px;">
+            <button type="button" class="btn-secondary" id="btn-keep-order" style="flex:1;">
+              <span id="keep-order-btn-text">Keep order</span>
+            </button>
+            <button type="button" class="btn-danger-outline" id="btn-confirm-cancel" style="flex:1;">
+              <span id="yes-cancel-btn-text">Yes, cancel order</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+  </div>
+
+  <!-- Client Application Logic -->
+  <script src="/app.js"></script>
+</body>
+</html>

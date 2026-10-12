@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Zupit Rider - Sign In | Jamui Hub</title>
+  
+  <!-- Typography: Inter & Noto Sans Devanagari -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+
+  <style>
+    body {
+      background-color: var(--color-bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 16px;
+    }
+
+    .rider-login-wrapper {
+      width: 100%;
+      max-width: 400px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .rider-login-card {
+      background-color: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-card);
+      padding: 24px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      box-shadow: 0 4px 16px rgba(20, 24, 31, 0.04);
+    }
+
+    .login-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* Six OTP Boxes (Strictly 48x56px as requested) */
+    .otp-boxes-grid {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      margin: 8px 0;
+    }
+
+    .otp-input-box {
+      width: 48px;
+      height: 56px;
+      border: 1.5px solid var(--color-border);
+      border-radius: var(--radius-md);
+      background-color: var(--color-surface);
+      font-size: 24px;
+      font-weight: 700;
+      text-align: center;
+      color: var(--color-text-primary);
+      outline: none;
+      transition: all 0.15s ease;
+      caret-color: var(--color-primary);
+    }
+
+    .otp-input-box:focus {
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px rgba(29, 63, 143, 0.12);
+      background-color: var(--color-surface);
+    }
+
+    .otp-input-box.filled {
+      border-color: var(--color-primary);
+      background-color: var(--color-primary-tint);
+    }
+
+    .otp-input-box.error {
+      border-color: var(--color-error);
+      background-color: var(--color-error-bg);
+    }
+
+    /* Waiting for Approval State Card */
+    .approval-state-card {
+      background-color: var(--color-warning-bg);
+      border: 1.5px solid var(--color-warning);
+      border-radius: var(--radius-card);
+      padding: 18px 16px;
+      display: none;
+      flex-direction: column;
+      gap: 12px;
+      text-align: left;
+    }
+
+    .approval-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background-color: #FEF3C7;
+      color: #B45309;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: var(--radius-pill);
+      width: fit-content;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .approval-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--color-text-primary);
+    }
+
+    .approval-desc {
+      font-size: 14px;
+      color: var(--color-text-secondary);
+      line-height: 1.5;
+    }
+
+    .demo-hint-box {
+      background-color: var(--color-primary-tint);
+      border: 1px solid #BFD2F8;
+      border-radius: var(--radius-md);
+      padding: 10px 12px;
+      font-size: 13px;
+      color: var(--color-primary);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="rider-login-wrapper">
+    
+    <div class="rider-login-card">
+      
+      <!-- Top Bar: Wordmark & Bilingual Toggle -->
+      <div class="login-header-row">
+        <div class="brand-wrapper">
+          <span class="brand-name">Zupit</span>
+          <span class="brand-dot"></span>
+        </div>
+        
+        <button type="button" class="lang-toggle-btn" id="lang-toggle-btn" aria-label="Switch Language">
+          <span id="lang-toggle-text">हिन्दी / EN</span>
+        </button>
+      </div>
+
+      <!-- Header Title & Subtitle -->
+      <div>
+        <h1 class="hero-heading" id="rider-title" style="font-size: 20px; margin-top: 0;">Rider Sign in</h1>
+        <p class="hero-subhead" id="rider-sub" style="font-size: 14px;">Deliver medicines across Jamui & earn</p>
+      </div>
+
+      <!-- WAITING FOR APPROVAL STATE CARD -->
+      <div class="approval-state-card" id="approval-state-card">
+        <span class="approval-badge" id="approval-badge-text">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+          <span id="badge-approval-label">Waiting for approval</span>
+        </span>
+
+        <h2 class="approval-title" id="approval-title-text">Application Under Review</h2>
+        
+        <p class="approval-desc" id="approval-desc-text">
+          Your rider application is currently waiting for approval by the Jamui hub team. Once your vehicle and identity documents are verified, you will be able to log in.
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 4px;">
+          <a href="tel:+916207856200" class="btn-secondary" style="font-size: 14px; text-decoration: none;" id="btn-call-approval-support">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+            </svg>
+            <span id="btn-call-support-label">Call Jamui Hub: +91 62078 56200</span>
+          </a>
+
+          <button type="button" class="btn-secondary" id="btn-try-different-phone" style="font-size: 14px;">
+            <span id="btn-try-diff-label">Use a different mobile number</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP 1: ENTER PHONE NUMBER -->
+      <div id="step-phone-container" style="display: flex; flex-direction: column; gap: 14px;">
+        <div class="form-group">
+          <label class="form-label form-label-required" for="rider-phone" id="label-rider-phone">Rider mobile number</label>
+          <div class="form-control-wrap">
+            <span class="form-input-prefix">+91</span>
+            <input
+              type="tel"
+              class="form-input with-prefix"
+              id="rider-phone"
+              placeholder="10-digit mobile number"
+              maxlength="10"
+              inputmode="numeric"
+              autocomplete="tel"
+            >
+          </div>
+          <span class="form-helper" id="helper-rider-phone">We will send a 6-digit OTP via SMS.</span>
+          <span class="form-error-msg" id="err-rider-phone"></span>
+        </div>
+
+        <button type="button" class="btn-primary" id="btn-send-otp">
+          <span id="btn-send-otp-text">Send OTP</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </button>
+      </div>
+
+      <!-- STEP 2: ENTER SIX OTP BOXES -->
+      <div id="step-otp-container" style="display: none; flex-direction: column; gap: 14px;">
+        
+        <div style="display: flex; align-items: baseline; justify-content: space-between;">
+          <span style="font-size: 14px; color: var(--color-text-secondary);" id="otp-sent-to-label">
+            OTP sent to +91 <strong id="display-target-phone">9835123401</strong>
+          </span>
+          <button type="button" class="location-btn-link" id="btn-change-phone" style="font-size: 13px;">
+            <span id="btn-change-phone-text">Change</span>
+          </button>
+        </div>
+
+        <!-- 6 OTP Boxes (48x56px, auto-advance, paste support) -->
+        <div class="otp-boxes-grid" id="otp-boxes-wrap">
+          <input type="text" class="otp-input-box" maxlength="1" inputmode="numeric" autocomplete="one-time-code" data-index="0" aria-label="Digit 1">
+          <input type="text" class="otp-input-box" maxlength="1" inputmode="numeric" data-index="1" aria-label="Digit 2">
+          <input type="text" class="otp-input-box" maxlength="1" inputmode="numeric" data-index="2" aria-label="Digit 3">
+          <input type="text" class="otp-input-box" maxlength="1" inputmode="numeric" data-index="3" aria-label="Digit 4">
+          <input type="text" class="otp-input-box" maxlength="1" inputmode="numeric" data-index="4" aria-label="Digit 5">
+          <input type="text" class="otp-input-box" maxlength="1" inputmode="numeric" data-index="5" aria-label="Digit 6">
+        </div>
+
+        <!-- OTP Error Message -->
+        <span class="form-error-msg" id="err-otp"></span>
+
+        <!-- Resend Timer (Starts at 30 seconds) -->
+        <div style="display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: var(--color-text-secondary);">
+          <span id="timer-status-text">Resend OTP in <strong id="resend-countdown">30s</strong></span>
+          <button type="button" class="location-btn-link" id="btn-resend-otp" style="font-size: 13px; display: none;">
+            <span id="btn-resend-text">Resend OTP</span>
+          </button>
+        </div>
+
+        <!-- Verify Button -->
+        <button type="button" class="btn-primary" id="btn-verify-otp">
+          <span id="btn-verify-otp-text">Verify & Start Delivery</span>
+        </button>
+      </div>
+
+      <!-- Demo Testing Helpers -->
+      <div class="demo-hint-box">
+        <span style="font-weight: 600;">Testing Shortcuts:</span>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button type="button" class="demo-pill-btn" id="btn-autofill-approved">
+            Approved Rider (9835123401)
+          </button>
+          <button type="button" class="demo-pill-btn warning-pill" id="btn-autofill-pending">
+            Test "Waiting for Approval"
+          </button>
+        </div>
+        <span id="demo-mock-otp-hint" style="font-size: 13px; color: var(--color-text-secondary); margin-top: 2px;">
+          Mock OTP will print to server console upon sending.
+        </span>
+      </div>
+
+    </div>
+
+    <!-- Hub Notice -->
+    <p style="font-size: 13px; color: var(--color-text-secondary); text-align: center;">
+      Zupit Rider Fleet • Jamui Sadar Hub
+    </p>
+
+  </div>
+
+  <script>
+    const I18N = {
+      en: {
+        toggle: "हिन्दी / EN",
+        title: "Rider Sign in",
+        sub: "Deliver medicines across Jamui & earn",
+        phoneLabel: "Rider mobile number",
+        phoneHelper: "We will send a 6-digit OTP via SMS.",
+        sendOtp: "Send OTP",
+        sendingOtp: "Sending OTP...",
+        errPhone: "Enter a valid 10-digit mobile number.",
+        otpSentTo: "OTP sent to +91",
+        change: "Change",
+        resendIn: "Resend OTP in",
+        resendNow: "Resend OTP",
+        verifyOtp: "Verify & Start Delivery",
+        verifying: "Verifying OTP...",
+        approvalBadge: "Waiting for approval",
+        approvalTitle: "Application Under Review",
+        approvalDesc: "Your rider application is currently waiting for approval by the Jamui hub team. Once your vehicle and identity documents are verified, you will be able to log in.",
+        callSupport: "Call Jamui Hub: +91 62078 56200",
+        tryDiff: "Use a different mobile number",
+        loginSuccess: "Verified! Loading rider console...",
+      },
+      hi: {
+        toggle: "EN / हिन्दी",
+        title: "राइडर लॉगिन",
+        sub: "जमुई में दवा डिलीवरी शुरू करें व कमाएं",
+        phoneLabel: "राइडर मोबाइल नंबर",
+        phoneHelper: "हम SMS द्वारा 6 अंकों का OTP भेजेंगे।",
+        sendOtp: "ओटीपी भेजें",
+        sendingOtp: "ओटीपी भेजा जा रहा है...",
+        errPhone: "10 अंकों का मान्य मोबाइल नंबर दर्ज करें।",
+        otpSentTo: "ओटीपी भेजा गया: +91",
+        change: "बदलें",
+        resendIn: "पुनः भेजने का समय:",
+        resendNow: "ओटीपी दोबारा भेजें",
+        verifyOtp: "सत्यापित करें व डिलीवरी शुरू करें",
+        verifying: "सत्यापन हो रहा है...",
+        approvalBadge: "अनुमोदन की प्रतीक्षा है",
+        approvalTitle: "आवेदन समीक्षाधीन है",
+        approvalDesc: "आपका राइडर आवेदन जमुई हब टीम द्वारा समीक्षाधीन है। वाहन व दस्तावेजों के सत्यापन के बाद आप लॉगिन कर सकेंगे।",
+        callSupport: "जमुई हब को कॉल करें: +91 62078 56200",
+        tryDiff: "दूसरा मोबाइल नंबर दर्ज करें",
+        loginSuccess: "सत्यापित! राइडर कंसोल लोड हो रहा है...",
+      }
+    };
+
+    let currentLang = 'en';
+    let currentPhone = '';
+    let resendTimer = null;
+    let countdownSec = 30;
+
+    function setLanguage(lang) {
+      currentLang = lang;
+      const dict = I18N[lang];
+      document.getElementById('lang-toggle-text').textContent = dict.toggle;
+      document.getElementById('rider-title').textContent = dict.title;
+      document.getElementById('rider-sub').textContent = dict.sub;
+      document.getElementById('label-rider-phone').textContent = dict.phoneLabel;
+      document.getElementById('helper-rider-phone').textContent = dict.phoneHelper;
+      document.getElementById('btn-send-otp-text').textContent = dict.sendOtp;
+      document.getElementById('btn-change-phone-text').textContent = dict.change;
+      document.getElementById('btn-resend-text').textContent = dict.resendNow;
+      document.getElementById('btn-verify-otp-text').textContent = dict.verifyOtp;
+      document.getElementById('badge-approval-label').textContent = dict.approvalBadge;
+      document.getElementById('approval-title-text').textContent = dict.approvalTitle;
+      document.getElementById('approval-desc-text').textContent = dict.approvalDesc;
+      document.getElementById('btn-call-support-label').textContent = dict.callSupport;
+      document.getElementById('btn-try-diff-label').textContent = dict.tryDiff;
+    }
+
+    document.getElementById('lang-toggle-btn').addEventListener('click', () => {
+      setLanguage(currentLang === 'en' ? 'hi' : 'en');
+    });
+
+    // Test autofill buttons
+    document.getElementById('btn-autofill-approved').addEventListener('click', () => {
+      resetToPhoneStep();
+      document.getElementById('rider-phone').value = '9835123401';
+    });
+
+    document.getElementById('btn-autofill-pending').addEventListener('click', () => {
+      resetToPhoneStep();
+      document.getElementById('rider-phone').value = '9835123499';
+    });
+
+    document.getElementById('btn-change-phone').addEventListener('click', resetToPhoneStep);
+    document.getElementById('btn-try-different-phone').addEventListener('click', resetToPhoneStep);
+
+    function resetToPhoneStep() {
+      clearInterval(resendTimer);
+      document.getElementById('approval-state-card').style.display = 'none';
+      document.getElementById('step-phone-container').style.display = 'flex';
+      document.getElementById('step-otp-container').style.display = 'none';
+      clearErrors();
+    }
+
+    function clearErrors() {
+      document.querySelectorAll('.form-input').forEach(el => el.classList.remove('error'));
+      document.querySelectorAll('.otp-input-box').forEach(el => el.classList.remove('error'));
+      document.getElementById('err-rider-phone').classList.remove('visible');
+      document.getElementById('err-otp').classList.remove('visible');
+    }
+
+    // Step 1: Send OTP
+    document.getElementById('btn-send-otp').addEventListener('click', sendOtpAction);
+    document.getElementById('btn-resend-otp').addEventListener('click', sendOtpAction);
+
+    async function sendOtpAction() {
+      clearErrors();
+      const phoneInput = document.getElementById('rider-phone');
+      const phone = phoneInput.value.replace(/\D/g, '').slice(-10);
+
+      if (phone.length !== 10) {
+        phoneInput.classList.add('error');
+        const errSpan = document.getElementById('err-rider-phone');
+        errSpan.textContent = I18N[currentLang].errPhone;
+        errSpan.classList.add('visible');
+        return;
+      }
+
+      currentPhone = phone;
+      const btn = document.getElementById('btn-send-otp');
+      btn.disabled = true;
+      document.getElementById('btn-send-otp-text').textContent = I18N[currentLang].sendingOtp;
+
+      try {
+        const res = await fetch('/api/v1/rider/auth/request-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone }),
+        });
+
+        const data = await res.json();
+        btn.disabled = false;
+        document.getElementById('btn-send-otp-text').textContent = I18N[currentLang].sendOtp;
+
+        if (!res.ok) {
+          // Check if Waiting for approval state
+          if (data.status === 'pending_approval') {
+            document.getElementById('step-phone-container').style.display = 'none';
+            document.getElementById('step-otp-container').style.display = 'none';
+            document.getElementById('approval-state-card').style.display = 'flex';
+            return;
+          }
+
+          phoneInput.classList.add('error');
+          const errSpan = document.getElementById('err-rider-phone');
+          errSpan.textContent = data.message || "Failed to send OTP.";
+          errSpan.classList.add('visible');
+          return;
+        }
+
+        // Show Step 2: OTP Boxes
+        document.getElementById('step-phone-container').style.display = 'none';
+        document.getElementById('step-otp-container').style.display = 'flex';
+        document.getElementById('display-target-phone').textContent = phone;
+        
+        // Reset and start countdown timer
+        startResendTimer(data.resendAvailableInSeconds || 30);
+        focusFirstOtpBox();
+
+      } catch (err) {
+        btn.disabled = false;
+        document.getElementById('btn-send-otp-text').textContent = I18N[currentLang].sendOtp;
+        const errSpan = document.getElementById('err-rider-phone');
+        errSpan.textContent = "Network error while requesting OTP.";
+        errSpan.classList.add('visible');
+      }
+    }
+
+    // Timer management
+    function startResendTimer(seconds) {
+      clearInterval(resendTimer);
+      countdownSec = seconds;
+      const timerStatus = document.getElementById('timer-status-text');
+      const resendBtn = document.getElementById('btn-resend-otp');
+      const countdownEl = document.getElementById('resend-countdown');
+
+      timerStatus.style.display = 'inline';
+      resendBtn.style.display = 'none';
+      countdownEl.textContent = `${countdownSec}s`;
+
+      resendTimer = setInterval(() => {
+        countdownSec--;
+        if (countdownSec <= 0) {
+          clearInterval(resendTimer);
+          timerStatus.style.display = 'none';
+          resendBtn.style.display = 'inline-flex';
+        } else {
+          countdownEl.textContent = `${countdownSec}s`;
+        }
+      }, 1000);
+    }
+
+    // Six OTP Boxes interaction (auto-advance & paste support)
+    const otpInputs = document.querySelectorAll('.otp-input-box');
+
+    function focusFirstOtpBox() {
+      otpInputs.forEach(i => { i.value = ''; i.classList.remove('filled', 'error'); });
+      if (otpInputs[0]) otpInputs[0].focus();
+    }
+
+    otpInputs.forEach((input, index) => {
+      // Single digit entry and auto-advance
+      input.addEventListener('input', (e) => {
+        const val = input.value.replace(/\D/g, '');
+        input.value = val ? val[0] : '';
+
+        if (input.value) {
+          input.classList.add('filled');
+          if (index < otpInputs.length - 1) {
+            otpInputs[index + 1].focus();
+          }
+        } else {
+          input.classList.remove('filled');
+        }
+
+        // Auto submit if all 6 filled
+        checkAutoSubmit();
+      });
+
+      // Backspace handling
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && !input.value && index > 0) {
+          otpInputs[index - 1].focus();
+        }
+      });
+
+      // Full Paste support
+      input.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const pastedData = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '');
+        if (!pastedData) return;
+
+        const digits = pastedData.slice(0, 6).split('');
+        digits.forEach((digit, i) => {
+          if (otpInputs[i]) {
+            otpInputs[i].value = digit;
+            otpInputs[i].classList.add('filled');
+          }
+        });
+
+        const nextFocus = Math.min(digits.length, 5);
+        if (otpInputs[nextFocus]) otpInputs[nextFocus].focus();
+
+        checkAutoSubmit();
+      });
+    });
+
+    function getEnteredOtp() {
+      return Array.from(otpInputs).map(i => i.value).join('');
+    }
+
+    function checkAutoSubmit() {
+      const otp = getEnteredOtp();
+      if (otp.length === 6) {
+        verifyOtpAction();
+      }
+    }
+
+    // Step 2: Verify OTP
+    document.getElementById('btn-verify-otp').addEventListener('click', verifyOtpAction);
+
+    async function verifyOtpAction() {
+      const otp = getEnteredOtp();
+      const errOtp = document.getElementById('err-otp');
+      errOtp.classList.remove('visible');
+
+      if (otp.length !== 6) {
+        otpInputs.forEach(i => i.classList.add('error'));
+        errOtp.textContent = "Please enter all 6 digits of the OTP.";
+        errOtp.classList.add('visible');
+        return;
+      }
+
+      const btn = document.getElementById('btn-verify-otp');
+      btn.disabled = true;
+      document.getElementById('btn-verify-otp-text').textContent = I18N[currentLang].verifying;
+
+      try {
+        const res = await fetch('/api/v1/rider/auth/verify-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: currentPhone, otp }),
+        });
+
+        const data = await res.json();
+        btn.disabled = false;
+        document.getElementById('btn-verify-otp-text').textContent = I18N[currentLang].verifyOtp;
+
+        if (!res.ok || !data.success) {
+          otpInputs.forEach(i => i.classList.add('error'));
+          errOtp.textContent = data.message || "Invalid OTP. Please check and try again.";
+          errOtp.classList.add('visible');
+          return;
+        }
+
+        // Success
+        if (data.refreshToken) {
+          localStorage.setItem('zupit_rider_refresh_token', data.refreshToken);
+        }
+        document.getElementById('btn-verify-otp-text').textContent = I18N[currentLang].loginSuccess;
+        setTimeout(() => {
+          window.location.href = '/rider/dashboard';
+        }, 600);
+
+      } catch (err) {
+        btn.disabled = false;
+        document.getElementById('btn-verify-otp-text').textContent = I18N[currentLang].verifyOtp;
+        errOtp.textContent = "Network error during verification.";
+        errOtp.classList.add('visible');
+      }
+    }
+  </script>
+</body>
+</html>

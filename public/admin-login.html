@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Zupit Admin - Sign In | Jamui Hub</title>
+  
+  <!-- Typography: Inter & Noto Sans Devanagari -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+
+  <style>
+    body {
+      background-color: var(--color-bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 16px;
+    }
+
+    .admin-login-wrapper {
+      width: 100%;
+      max-width: 400px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .admin-login-card {
+      background-color: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-card);
+      padding: 24px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      box-shadow: 0 4px 16px rgba(20, 24, 31, 0.04);
+    }
+
+    .login-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .demo-hint-box {
+      background-color: var(--color-primary-tint);
+      border: 1px solid #BFD2F8;
+      border-radius: var(--radius-md);
+      padding: 10px 12px;
+      font-size: 13px;
+      color: var(--color-primary);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .demo-hint-btn {
+      align-self: flex-start;
+      background: none;
+      border: none;
+      color: var(--color-primary);
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      text-decoration: underline;
+      padding: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="admin-login-wrapper">
+    
+    <div class="admin-login-card">
+      
+      <!-- Card Top: Wordmark & Language Switcher -->
+      <div class="login-header-row">
+        <div class="brand-wrapper">
+          <span class="brand-name">Zupit</span>
+          <span class="brand-dot"></span>
+        </div>
+        
+        <button type="button" class="lang-toggle-btn" id="lang-toggle-btn" aria-label="Switch Language">
+          <span id="lang-toggle-text">हिन्दी / EN</span>
+        </button>
+      </div>
+
+      <!-- Title & Subtitle -->
+      <div>
+        <h1 class="hero-heading" id="login-title" style="font-size: 20px; margin-top: 0;">Admin Sign in</h1>
+        <p class="hero-subhead" id="login-sub" style="font-size: 14px;">Operations console for Jamui hub</p>
+      </div>
+
+      <!-- General Banner Error (Rate limit, network) -->
+      <div class="upload-error-card" id="general-error-card" style="display: none;">
+        <span id="general-error-text">Too many login attempts.</span>
+      </div>
+
+      <!-- Admin Login Form -->
+      <form id="admin-login-form" novalidate style="display: flex; flex-direction: column; gap: 14px;">
+        
+        <!-- Email Field -->
+        <div class="form-group">
+          <label class="form-label form-label-required" for="admin-email" id="label-email">Email address</label>
+          <input
+            type="email"
+            class="form-input"
+            id="admin-email"
+            placeholder="admin@zupit.in"
+            autocomplete="email"
+            required
+          >
+          <span class="form-error-msg" id="err-email"></span>
+        </div>
+
+        <!-- Password Field -->
+        <div class="form-group">
+          <label class="form-label form-label-required" for="admin-password" id="label-password">Password</label>
+          <input
+            type="password"
+            class="form-input"
+            id="admin-password"
+            placeholder="••••••••"
+            autocomplete="current-password"
+            required
+          >
+          <span class="form-error-msg" id="err-password"></span>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="btn-primary" id="btn-admin-submit" style="margin-top: 6px;">
+          <span id="btn-submit-text">Sign in</span>
+        </button>
+      </form>
+
+      <!-- Demo Credentials Helper -->
+      <div class="demo-hint-box">
+        <span style="font-weight: 600;">Demo Credentials:</span>
+        <span>Email: <code>admin@zupit.in</code></span>
+        <span>Password: <code>Admin@123</code></span>
+        <button type="button" class="demo-hint-btn" id="btn-autofill-admin">Autofill credentials</button>
+      </div>
+
+    </div>
+
+    <!-- Hub Notice -->
+    <p style="font-size: 13px; color: var(--color-text-secondary); text-align: center;">
+      Zupit Civic Health Logistics • Jamui District, Bihar
+    </p>
+
+  </div>
+
+  <script>
+    const I18N = {
+      en: {
+        toggle: "हिन्दी / EN",
+        title: "Admin Sign in",
+        sub: "Operations console for Jamui hub",
+        email: "Email address",
+        password: "Password",
+        submit: "Sign in",
+        submitting: "Signing in...",
+        errEmailRequired: "Please enter your admin email.",
+        errEmailInvalid: "Please enter a valid email address.",
+        errPassRequired: "Please enter your password.",
+        loginSuccess: "Login successful! Redirecting to dashboard...",
+      },
+      hi: {
+        toggle: "EN / हिन्दी",
+        title: "एडमिन लॉगिन",
+        sub: "जमुई हब ऑपरेशंस कंसोल",
+        email: "ईमेल पता",
+        password: "पासवर्ड",
+        submit: "साइन इन करें",
+        submitting: "लॉगिन हो रहा है...",
+        errEmailRequired: "कृपया अपना एडमिन ईमेल दर्ज करें।",
+        errEmailInvalid: "कृपया मान्य ईमेल दर्ज करें।",
+        errPassRequired: "कृपया अपना पासवर्ड दर्ज करें।",
+        loginSuccess: "लॉगिन सफल! डैशबोर्ड पर ले जाया जा रहा है...",
+      }
+    };
+
+    let currentLang = 'en';
+
+    function setLanguage(lang) {
+      currentLang = lang;
+      const dict = I18N[lang];
+      document.getElementById('lang-toggle-text').textContent = dict.toggle;
+      document.getElementById('login-title').textContent = dict.title;
+      document.getElementById('login-sub').textContent = dict.sub;
+      document.getElementById('label-email').textContent = dict.email;
+      document.getElementById('label-password').textContent = dict.password;
+      document.getElementById('btn-submit-text').textContent = dict.submit;
+    }
+
+    document.getElementById('lang-toggle-btn').addEventListener('click', () => {
+      setLanguage(currentLang === 'en' ? 'hi' : 'en');
+    });
+
+    document.getElementById('btn-autofill-admin').addEventListener('click', () => {
+      document.getElementById('admin-email').value = 'admin@zupit.in';
+      document.getElementById('admin-password').value = 'Admin@123';
+      clearErrors();
+    });
+
+    function clearErrors() {
+      document.querySelectorAll('.form-input').forEach(el => el.classList.remove('error'));
+      document.querySelectorAll('.form-error-msg').forEach(el => {
+        el.classList.remove('visible');
+        el.textContent = '';
+      });
+      document.getElementById('general-error-card').style.display = 'none';
+    }
+
+    document.getElementById('admin-login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      clearErrors();
+      const dict = I18N[currentLang];
+
+      const emailInput = document.getElementById('admin-email');
+      const passInput = document.getElementById('admin-password');
+      const email = emailInput.value.trim();
+      const password = passInput.value;
+
+      let hasError = false;
+
+      if (!email) {
+        showError(emailInput, 'err-email', dict.errEmailRequired);
+        hasError = true;
+      } else if (!email.includes('@')) {
+        showError(emailInput, 'err-email', dict.errEmailInvalid);
+        hasError = true;
+      }
+
+      if (!password) {
+        showError(passInput, 'err-password', dict.errPassRequired);
+        hasError = true;
+      }
+
+      if (hasError) return;
+
+      const submitBtn = document.getElementById('btn-admin-submit');
+      submitBtn.disabled = true;
+      document.getElementById('btn-submit-text').textContent = dict.submitting;
+
+      try {
+        const res = await fetch('/api/v1/admin/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+          if (res.status === 429) {
+            document.getElementById('general-error-text').textContent = data.message || "Too many attempts. Wait 1 minute.";
+            document.getElementById('general-error-card').style.display = 'flex';
+          } else {
+            showError(passInput, 'err-password', data.message || "Invalid email or password.");
+          }
+          submitBtn.disabled = false;
+          document.getElementById('btn-submit-text').textContent = dict.submit;
+          return;
+        }
+
+        // Success
+        document.getElementById('btn-submit-text').textContent = dict.loginSuccess;
+        setTimeout(() => {
+          window.location.href = '/admin/dashboard';
+        }, 600);
+
+      } catch (err) {
+        document.getElementById('general-error-text').textContent = "Network error. Please try again.";
+        document.getElementById('general-error-card').style.display = 'flex';
+        submitBtn.disabled = false;
+        document.getElementById('btn-submit-text').textContent = dict.submit;
+      }
+    });
+
+    function showError(inputEl, errSpanId, msg) {
+      inputEl.classList.add('error');
+      const span = document.getElementById(errSpanId);
+      if (span) {
+        span.textContent = msg;
+        span.classList.add('visible');
+      }
+    }
+  </script>
+</body>
+</html>
