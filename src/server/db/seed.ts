@@ -21,6 +21,7 @@ export async function seed() {
     { key: 'delivery_fee', value: '0', description: 'Doorstep medicine delivery fee in INR' },
     { key: 'service_fee', value: '0', description: 'Platform service fee in INR' },
     { key: 'cod_enabled', value: 'true', description: 'Enable cash on delivery payment' },
+    { key: 'payments_enabled', value: 'false', description: 'Enable online payment gateway (Razorpay)' },
     { key: 'cod_limit', value: '5000', description: 'Maximum order amount eligible for COD in INR' },
     { key: 'bill_confirm_threshold', value: '2000', description: 'Orders above this amount require customer phone confirmation before purchase' },
     { key: 'accept_timeout_minutes', value: '5', description: 'Minutes before an unaccepted order is escalated to operations' },

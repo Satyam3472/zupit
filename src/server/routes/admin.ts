@@ -698,6 +698,17 @@ router.post('/orders/create', async (req: Request, res: Response): Promise<void>
       return;
     }
 
+    // Check payment method settings
+    const platformSettings = await settingsService.getAll();
+    if (paymentMethod === 'online' && !platformSettings.payments_enabled) {
+      res.status(400).json({
+        success: false,
+        code: 'ONLINE_PAYMENTS_DISABLED',
+        message: 'Online payments are currently disabled. Please select Cash on Delivery.',
+      });
+      return;
+    }
+
     const result = await db.transaction(async (tx) => {
       // Upsert Customer
       let customerId: string;

@@ -11,6 +11,7 @@ export const SettingsSchema = z.object({
   delivery_fee: z.coerce.number().min(0).default(0),
   service_fee: z.coerce.number().min(0).default(0),
   cod_enabled: z.coerce.boolean().default(true),
+  payments_enabled: z.coerce.boolean().default(false),
   cod_limit: z.coerce.number().min(0).default(5000),
   bill_confirm_threshold: z.coerce.number().min(0).default(2000),
   accept_timeout_minutes: z.coerce.number().min(1).default(5),
@@ -29,7 +30,7 @@ export class SettingsService {
     const rawMap: Record<string, unknown> = {};
 
     for (const r of rows) {
-      if (r.key === 'cod_enabled') {
+      if (r.key === 'cod_enabled' || r.key === 'payments_enabled') {
         rawMap[r.key] = r.value === 'true' || r.value === '1';
       } else if (
         ['delivery_fee', 'service_fee', 'cod_limit', 'bill_confirm_threshold', 'accept_timeout_minutes', 'otp_max_attempts'].includes(r.key)
@@ -44,13 +45,14 @@ export class SettingsService {
   }
 
   /**
-   * Returns public configuration: only cod_enabled and delivery_fee
+   * Returns public configuration: only cod_enabled, payments_enabled, and delivery_fee
    */
-  async getPublicConfig(): Promise<{ cod_enabled: boolean; delivery_fee: number }> {
+  async getPublicConfig(): Promise<{ cod_enabled: boolean; delivery_fee: number; payments_enabled: boolean }> {
     const all = await this.getAll();
     return {
       cod_enabled: all.cod_enabled,
       delivery_fee: all.delivery_fee,
+      payments_enabled: all.payments_enabled,
     };
   }
 

@@ -836,6 +836,14 @@ router.post('/orders/:orderId/verify-delivery', async (req: Request, res: Respon
   const amountToCollect = Number(order.finalAmount || order.totalAmount || 0);
 
   if (paymentMethodSelected === 'online') {
+    if (!platformSettings.payments_enabled) {
+      res.status(400).json({
+        success: false,
+        error: 'ONLINE_PAYMENTS_DISABLED',
+        message: 'Online payments are currently disabled. Please select Cash collected.',
+      });
+      return;
+    }
     if (order.paymentStatus !== 'paid') {
       res.status(400).json({
         success: false,

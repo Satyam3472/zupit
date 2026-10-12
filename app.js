@@ -377,6 +377,8 @@ const AppState = {
   landmark: "",
   pincode: "",
   paymentMethod: "cod", // 'cod' | 'online'
+  paymentsEnabled: false,
+  codEnabled: true,
   
   // Active Order Model
   activeOrder: {
@@ -431,9 +433,42 @@ const ASSETS = {
 document.addEventListener('DOMContentLoaded', () => {
   initStorage();
   bindGlobalEvents();
+  applyPaymentConfig();
+  fetchPublicConfig();
   handleRoute();
   applyLanguage(AppState.lang);
 });
+
+async function fetchPublicConfig() {
+  try {
+    const res = await fetch('/api/v1/public/config');
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.config) {
+        AppState.paymentsEnabled = !!data.config.payments_enabled;
+        AppState.codEnabled = data.config.cod_enabled !== false;
+      }
+    }
+  } catch (err) {
+    console.warn("Config load error", err);
+  } finally {
+    applyPaymentConfig();
+  }
+}
+
+function applyPaymentConfig() {
+  const onlineCard = document.getElementById('pay-card-online');
+  const codCard = document.getElementById('pay-card-cod');
+  if (!AppState.paymentsEnabled) {
+    if (onlineCard) onlineCard.style.display = 'none';
+    if (codCard) {
+      codCard.style.display = 'flex';
+      selectPaymentMethod('cod');
+    }
+  } else {
+    if (onlineCard) onlineCard.style.display = 'flex';
+  }
+}
 
 // Seed & sync storage
 function initStorage() {
@@ -957,7 +992,11 @@ function applyReturningCustomerData() {
   document.getElementById('field-pincode').value = user.pincode;
   
   handlePincodeInput();
-  selectPaymentMethod(user.payment || 'online');
+  if (!AppState.paymentsEnabled || user.payment !== 'online') {
+    selectPaymentMethod('cod');
+  } else {
+    selectPaymentMethod('online');
+  }
 
   // Dismiss card with subtle feedback
   document.getElementById('returning-customer-card').style.display = 'none';
@@ -1328,20 +1367,31 @@ function handlePincodeInput() {
 
 // Payment Option Card Select
 function selectPaymentMethod(method) {
+  if (!AppState.paymentsEnabled && method === 'online') {
+    method = 'cod';
+  }
   AppState.paymentMethod = method;
   const codCard = document.getElementById('pay-card-cod');
   const onlineCard = document.getElementById('pay-card-online');
 
   if (method === 'cod') {
-    codCard.classList.add('selected');
-    codCard.setAttribute('aria-checked', 'true');
-    onlineCard.classList.remove('selected');
-    onlineCard.setAttribute('aria-checked', 'false');
+    if (codCard) {
+      codCard.classList.add('selected');
+      codCard.setAttribute('aria-checked', 'true');
+    }
+    if (onlineCard) {
+      onlineCard.classList.remove('selected');
+      onlineCard.setAttribute('aria-checked', 'false');
+    }
   } else {
-    onlineCard.classList.add('selected');
-    onlineCard.setAttribute('aria-checked', 'true');
-    codCard.classList.remove('selected');
-    codCard.setAttribute('aria-checked', 'false');
+    if (onlineCard) {
+      onlineCard.classList.add('selected');
+      onlineCard.setAttribute('aria-checked', 'true');
+    }
+    if (codCard) {
+      codCard.classList.remove('selected');
+      codCard.setAttribute('aria-checked', 'false');
+    }
   }
 }
 
@@ -1860,10 +1910,10 @@ function renderTrackingScreen() {
     const payBtn = document.getElementById('btn-bill-pay-now');
     const codNote = document.getElementById('bill-cod-rider-note');
 
-    if (AppState.activeOrder.paymentMethod === 'online' && !AppState.activeOrder.paymentPaid) {
+    if (AppState.paymentsEnabled && AppState.activeOrder.paymentMethod === 'online' && !AppState.activeOrder.paymentPaid) {
       payBtn.style.display = 'flex';
       codNote.style.display = 'none';
-    } else if (AppState.activeOrder.paymentMethod === 'online' && AppState.activeOrder.paymentPaid) {
+    } else if (AppState.paymentsEnabled && AppState.activeOrder.paymentMethod === 'online' && AppState.activeOrder.paymentPaid) {
       payBtn.style.display = 'none';
       codNote.style.display = 'block';
       codNote.textContent = AppState.lang === 'en' ? "Bill paid online via UPI" : "UPI द्वारा बिल भुगतान हो चुका है";

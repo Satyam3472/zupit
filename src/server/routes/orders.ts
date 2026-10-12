@@ -153,14 +153,22 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
         };
       }
 
-      // 4c. Check COD Settings
+      // 4c. Check Payment Method Settings
+      const platformSettings = await settingsService.getAll();
       if (paymentMethod === 'cod') {
-        const platformSettings = await settingsService.getAll();
         if (!platformSettings.cod_enabled) {
           throw {
             status: 400,
             code: 'COD_DISABLED',
             message: 'Cash on Delivery is currently disabled. Please select online payment.',
+          };
+        }
+      } else if (paymentMethod === 'online') {
+        if (!platformSettings.payments_enabled) {
+          throw {
+            status: 400,
+            code: 'ONLINE_PAYMENTS_DISABLED',
+            message: 'Online payments are currently disabled. Please select Cash on Delivery.',
           };
         }
       }

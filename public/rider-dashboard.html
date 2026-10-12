@@ -550,7 +550,7 @@
               <span id="txt-opt-cash-collected">💵 Cash collected</span>
             </label>
 
-            <label id="lbl-online-payment" style="display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 700; cursor: pointer; padding: 10px 12px; background: #FFFFFF; border: 1.5px solid #D0D5DD; border-radius: 12px;">
+            <label id="lbl-online-payment" style="display: none; align-items: center; gap: 10px; font-size: 16px; font-weight: 700; cursor: pointer; padding: 10px 12px; background: #FFFFFF; border: 1.5px solid #D0D5DD; border-radius: 12px;">
               <input type="radio" name="payment-collect-method" value="online" id="radio-online-payment" style="width: 20px; height: 20px; accent-color: #1D3F8F;">
               <div>
                 <span id="txt-opt-paid-online">💳 Paid online</span>
@@ -1638,16 +1638,24 @@
       // Check online payment option
       const radioOnline = document.getElementById('radio-online-payment');
       const lblOnline = document.getElementById('lbl-online-payment');
-      if (o.paymentStatus === 'paid') {
-        radioOnline.disabled = false;
-        radioOnline.checked = true;
-        lblOnline.style.opacity = '1';
-        document.getElementById('txt-online-pay-subtext').textContent = '✓ Payment confirmed online by customer';
-      } else {
-        radioOnline.disabled = true;
-        radioOnline.checked = false;
-        lblOnline.style.opacity = '0.6';
-        document.getElementById('txt-online-pay-subtext').textContent = 'Online payment not completed yet (Collect cash)';
+      const radioCod = document.querySelector('input[name="payment-collect-method"][value="cod"]');
+      if (lblOnline) {
+        if (!window.paymentsEnabled) {
+          lblOnline.style.display = 'none';
+          if (radioCod) radioCod.checked = true;
+        } else if (o.paymentStatus === 'paid') {
+          lblOnline.style.display = 'flex';
+          radioOnline.disabled = false;
+          radioOnline.checked = true;
+          lblOnline.style.opacity = '1';
+          document.getElementById('txt-online-pay-subtext').textContent = '✓ Payment confirmed online by customer';
+        } else {
+          lblOnline.style.display = 'flex';
+          radioOnline.disabled = true;
+          radioOnline.checked = false;
+          lblOnline.style.opacity = '0.6';
+          document.getElementById('txt-online-pay-subtext').textContent = 'Online payment not completed yet (Collect cash)';
+        }
       }
 
       // Reset code inputs
@@ -1894,6 +1902,18 @@
 
     // Init & Polling
     window.addEventListener('DOMContentLoaded', () => {
+      window.paymentsEnabled = false;
+      fetch('/api/v1/public/config')
+        .then(r => r.json())
+        .then(d => {
+          if (d && d.config) {
+            window.paymentsEnabled = !!d.config.payments_enabled;
+          }
+        })
+        .catch(() => {
+          window.paymentsEnabled = false;
+        });
+
       applyTranslations();
       fetchRiderHome(true);
 
