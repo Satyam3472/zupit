@@ -200,12 +200,20 @@ export class OrderService {
       }
     }
 
-    // 4. Validate non-empty order
+    // 4. Validate non-empty order and file limits
     if (medicines.length === 0 && rxList.length === 0) {
       throw {
         status: 400,
         code: 'EMPTY_ORDER',
         message: 'Please add at least one medicine or upload a prescription to place an order.',
+      };
+    }
+
+    if (rxList.length > 5) {
+      throw {
+        status: 400,
+        code: 'MAX_FILES_EXCEEDED',
+        message: 'Maximum 5 prescription files allowed.',
       };
     }
 

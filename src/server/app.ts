@@ -22,6 +22,35 @@ export function createApp() {
   app.use(express.urlencoded({ extended: true }));
   app.use(cookieParser());
 
+  // CSRF protection: Origin check on cookie-authenticated mutating routes
+  app.use((req: Request, res: Response, next) => {
+    const isMutating = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method);
+    const hasAuthCookie = Boolean(req.cookies?.admin_token || req.cookies?.rider_access_token);
+    const hasBearerHeader = Boolean(req.headers.authorization && req.headers.authorization.startsWith('Bearer '));
+
+    if (isMutating && hasAuthCookie && !hasBearerHeader) {
+      const origin = req.headers.origin;
+      const host = req.headers.host;
+      if (origin) {
+        try {
+          const originHost = new URL(origin).host;
+          if (originHost !== host && !originHost.startsWith('localhost') && !originHost.startsWith('127.0.0.1')) {
+            res.status(403).json({
+              success: false,
+              error: 'CSRF_BLOCKED',
+              message: 'Cross-origin request blocked.',
+            });
+            return;
+          }
+        } catch {
+          res.status(403).json({ success: false, error: 'INVALID_ORIGIN', message: 'Invalid origin header.' });
+          return;
+        }
+      }
+    }
+    next();
+  });
+
   const publicDir = path.join(process.cwd(), 'public');
   const rootDir = process.cwd();
 

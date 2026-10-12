@@ -54,7 +54,7 @@ const CreateOrderSchema = z
     paymentMethod: z.enum(['cod', 'online']).default('cod'),
     notes: z.string().trim().optional(),
     medicines: z.array(MedicineItemSchema).optional().default([]),
-    prescriptions: z.array(PrescriptionItemSchema).optional().default([]),
+    prescriptions: z.array(PrescriptionItemSchema).max(5, 'Maximum 5 prescription files allowed.').optional().default([]),
   })
   .refine(
     (data) => (data.medicines && data.medicines.length > 0) || (data.prescriptions && data.prescriptions.length > 0),

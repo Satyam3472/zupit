@@ -963,6 +963,16 @@ function applyLanguage(lang) {
   }
 }
 
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 // Screen 1: Returning Customer Card Logic
 function renderReturningCustomerCard() {
   const card = document.getElementById('returning-customer-card');
@@ -972,9 +982,9 @@ function renderReturningCustomerCard() {
   if (storedUser && storedUser.name) {
     card.style.display = 'flex';
     const promptText = dict.returningPrompt
-      .replace('{name}', `<strong>${storedUser.name}</strong>`)
-      .replace('{address}', storedUser.address)
-      .replace('{landmark}', storedUser.landmark);
+      .replace('{name}', `<strong>${escapeHtml(storedUser.name)}</strong>`)
+      .replace('{address}', escapeHtml(storedUser.address))
+      .replace('{landmark}', escapeHtml(storedUser.landmark));
     document.getElementById('returning-customer-prompt').innerHTML = promptText;
   } else {
     card.style.display = 'none';
@@ -1514,18 +1524,27 @@ async function handlePlaceOrder() {
   };
 
   const submitBtn = document.getElementById('place-order-submit-btn');
+  if (submitBtn.disabled) return;
+  submitBtn.disabled = true;
   const originalBtnHtml = submitBtn.innerHTML;
   submitBtn.innerHTML = `<span>${AppState.lang === 'en' ? 'Placing order...' : 'ऑर्डर भेजा जा रहा है...'}</span>`;
+
+  const clientKey = 'cli_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
+  const payloadWithKey = { ...orderPayload, idempotencyKey: clientKey };
 
   try {
     const res = await fetch('/api/v1/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(orderPayload),
+      headers: {
+        'Content-Type': 'application/json',
+        'x-idempotency-key': clientKey,
+      },
+      body: JSON.stringify(payloadWithKey),
     });
 
     const data = await res.json();
     submitBtn.innerHTML = originalBtnHtml;
+    submitBtn.disabled = false;
 
     if (!res.ok) {
       if (data.error === 'UNSERVICEABLE_PINCODE') {
@@ -2096,8 +2115,8 @@ function renderOrderAccordionDetails() {
       const strengthDisplay = m.strength ? ` (${m.strength})` : '';
       const qty = m.quantity || m.qty || 1;
       row.innerHTML = `
-        <span class="summary-label">${m.name}${strengthDisplay}</span>
-        <span class="summary-val">Qty: ${qty}</span>
+        <span class="summary-label">${escapeHtml(m.name)}${escapeHtml(strengthDisplay)}</span>
+        <span class="summary-val">Qty: ${escapeHtml(qty)}</span>
       `;
       itemsList.appendChild(row);
     });
