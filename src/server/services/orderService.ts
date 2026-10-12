@@ -70,9 +70,10 @@ export interface CreateOrderResult {
   deliveryCode: string;
 }
 
-// In-memory idempotency cache (TTL: 10 minutes)
+// In-memory idempotency cache with concurrency lock (TTL: 10 minutes)
 interface CachedIdempotency {
-  result: CreateOrderResult;
+  promise?: Promise<CreateOrderResult>;
+  result?: CreateOrderResult;
   timestamp: number;
 }
 const idempotencyStore = new Map<string, CachedIdempotency>();
@@ -136,9 +137,56 @@ export class OrderService {
   }
 
   /**
-   * Single reusable order creation service with idempotency and atomic writes
+   * Handles idempotency and concurrency locking for order creation
    */
   async createOrder(params: CreateOrderParams): Promise<CreateOrderResult> {
+    const { idempotencyKey } = params;
+
+    if (idempotencyKey) {
+      const cached = idempotencyStore.get(idempotencyKey);
+      if (cached && Date.now() - cached.timestamp < 10 * 60 * 1000) {
+        if (cached.promise) {
+          return await cached.promise;
+        }
+        if (cached.result) {
+          return cached.result;
+        }
+      }
+
+      let resolvePromise!: (val: CreateOrderResult) => void;
+      let rejectPromise!: (err: any) => void;
+      const inFlightPromise = new Promise<CreateOrderResult>((resolve, reject) => {
+        resolvePromise = resolve;
+        rejectPromise = reject;
+      });
+
+      idempotencyStore.set(idempotencyKey, {
+        promise: inFlightPromise,
+        timestamp: Date.now(),
+      });
+
+      try {
+        const result = await this.executeCreateOrder(params);
+        idempotencyStore.set(idempotencyKey, {
+          result,
+          timestamp: Date.now(),
+        });
+        resolvePromise(result);
+        return result;
+      } catch (err) {
+        idempotencyStore.delete(idempotencyKey);
+        rejectPromise(err);
+        throw err;
+      }
+    }
+
+    return await this.executeCreateOrder(params);
+  }
+
+  /**
+   * Single reusable order creation service with atomic writes and validations
+   */
+  private async executeCreateOrder(params: CreateOrderParams): Promise<CreateOrderResult> {
     const {
       name,
       phone: rawPhone,
@@ -152,20 +200,11 @@ export class OrderService {
       prescriptions: rxList = [],
       createdByAdminId,
       clientIp = '127.0.0.1',
-      idempotencyKey,
     } = params;
 
     const phone = rawPhone.replace(/\D/g, '').slice(-10);
 
-    // 1. Idempotency Check
-    if (idempotencyKey) {
-      const cached = idempotencyStore.get(idempotencyKey);
-      if (cached && Date.now() - cached.timestamp < 10 * 60 * 1000) {
-        return cached.result;
-      }
-    }
-
-    // 2. Validate Serviceable Area
+    // 1. Validate Serviceable Area
     const [area] = await db
       .select()
       .from(serviceableAreas)
@@ -180,7 +219,7 @@ export class OrderService {
       };
     }
 
-    // 3. Validate Payment Method
+    // 2. Validate Payment Method
     const platformSettings = await settingsService.getAll();
     if (paymentMethod === 'cod') {
       if (!platformSettings.cod_enabled) {
@@ -200,7 +239,7 @@ export class OrderService {
       }
     }
 
-    // 4. Validate non-empty order and file limits
+    // 3. Validate non-empty order and file limits
     if (medicines.length === 0 && rxList.length === 0) {
       throw {
         status: 400,
@@ -217,9 +256,9 @@ export class OrderService {
       };
     }
 
-    // 5. Execute Atomic Transaction
-    const result = await db.transaction(async (tx) => {
-      // 5a. Check Customer Blocklist
+    // 4. Execute Atomic Transaction
+    return await db.transaction(async (tx) => {
+      // 4a. Check Customer Blocklist
       const [existingCustomer] = await tx
         .select()
         .from(customers)
@@ -253,7 +292,7 @@ export class OrderService {
         customerId = newCustomer.id;
       }
 
-      // 5b. Create Address
+      // 4b. Create Address
       const [newAddress] = await tx
         .insert(addresses)
         .values({
@@ -272,7 +311,7 @@ export class OrderService {
       const trackingToken = crypto.randomBytes(16).toString('hex');
       const deliveryCode = Math.floor(1000 + Math.random() * 9000).toString();
 
-      // 5c. Create Order
+      // 4c. Create Order
       const [newOrder] = await tx
         .insert(orders)
         .values({
@@ -298,7 +337,7 @@ export class OrderService {
           trackingToken: orders.trackingToken,
         });
 
-      // 5d. Insert Medicine Items
+      // 4d. Insert Medicine Items
       for (const item of medicines) {
         await tx.insert(orderItems).values({
           orderId: newOrder.id,
@@ -310,7 +349,7 @@ export class OrderService {
         });
       }
 
-      // 5e. Insert Prescriptions
+      // 4e. Insert Prescriptions
       for (const rx of rxList) {
         await tx.insert(prescriptions).values({
           orderId: newOrder.id,
@@ -321,7 +360,7 @@ export class OrderService {
         });
       }
 
-      // 5f. Timeline Event
+      // 4f. Timeline Event
       await tx.insert(orderStatusEvents).values({
         orderId: newOrder.id,
         status: 'placed',
@@ -347,16 +386,6 @@ export class OrderService {
         deliveryCode,
       };
     });
-
-    // Cache idempotency result
-    if (idempotencyKey) {
-      idempotencyStore.set(idempotencyKey, {
-        result,
-        timestamp: Date.now(),
-      });
-    }
-
-    return result;
   }
 }
 

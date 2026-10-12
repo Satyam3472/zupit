@@ -34,7 +34,7 @@ const PrescriptionItemSchema = z.object({
 
 const CreateOrderSchema = z
   .object({
-    name: z.string().trim().min(2, 'Name must be at least 2 characters'),
+    name: z.string().trim().min(2, 'Name must be at least 2 characters').max(100, 'Name must not exceed 100 characters'),
     mobile: z
       .string()
       .trim()
@@ -42,8 +42,8 @@ const CreateOrderSchema = z
       .refine((v) => /^[6-9]\d{9}$/.test(v), {
         message: 'Enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9',
       }),
-    houseArea: z.string().trim().min(3, 'House or area details are required'),
-    landmark: z.string().trim().optional(),
+    houseArea: z.string().trim().min(3, 'House or area details are required').max(200, 'House or area details must not exceed 200 characters'),
+    landmark: z.string().trim().max(100, 'Landmark must not exceed 100 characters').optional(),
     pincode: z
       .string()
       .trim()
@@ -52,7 +52,7 @@ const CreateOrderSchema = z
         message: 'Pincode must be exactly 6 digits',
       }),
     paymentMethod: z.enum(['cod', 'online']).default('cod'),
-    notes: z.string().trim().optional(),
+    notes: z.string().trim().max(500, 'Notes must not exceed 500 characters').optional(),
     medicines: z.array(MedicineItemSchema).optional().default([]),
     prescriptions: z.array(PrescriptionItemSchema).max(5, 'Maximum 5 prescription files allowed.').optional().default([]),
   })
@@ -150,6 +150,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
       res.status(err.status).json({
         success: false,
         error: err.code || 'ORDER_CREATION_FAILED',
+        code: err.code || 'ORDER_CREATION_FAILED',
         message: err.message,
       });
       return;
