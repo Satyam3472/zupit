@@ -15,6 +15,13 @@
       "when": 1791810788181,
       "tag": "0001_curvy_madame_web",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791828364949,
+      "tag": "0002_eminent_spyke",
+      "breakpoints": true
     }
   ]
 }

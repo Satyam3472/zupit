@@ -1600,7 +1600,7 @@ function renderOrderPlacedSummary() {
   document.getElementById('placed-order-id').textContent = AppState.activeOrder.orderId;
 
   // Item count summary
-  let itemSummaryText = "";
+  let itemSummaryText;
   const validMeds = AppState.medicines.filter(m => m.name && m.name.trim().length > 0);
   const medCount = validMeds.length;
   const rxCount = AppState.prescriptions.length || AppState.prescriptionImages.length;

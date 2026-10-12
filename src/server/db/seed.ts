@@ -80,6 +80,31 @@ export async function seed() {
     });
   console.log(`✅ Seeded owner admin (${ownerEmail}).`);
 
+  // Ops Admin
+  const opsEmail = 'ops@zupit.in';
+  const opsHash = await argon2.hash('Admin@123');
+  await db
+    .insert(admins)
+    .values({
+      name: 'Ramesh Kumar (Ops)',
+      email: opsEmail,
+      phone: '9835123999',
+      passwordHash: opsHash,
+      role: 'ops',
+      isActive: true,
+    })
+    .onConflictDoUpdate({
+      target: admins.email,
+      set: {
+        name: 'Ramesh Kumar (Ops)',
+        role: 'ops',
+        passwordHash: opsHash,
+        isActive: true,
+        updatedAt: new Date(),
+      },
+    });
+  console.log(`✅ Seeded ops admin (${opsEmail}).`);
+
   /* -------------------------------------------------------------------------
      3. 3 Approved Riders (Idempotent upsert by phone)
      ------------------------------------------------------------------------- */
