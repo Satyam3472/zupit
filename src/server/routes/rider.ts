@@ -421,6 +421,7 @@ router.get('/orders/:orderId', async (req: Request, res: Response): Promise<void
       deliveryCodeAttempts: order.deliveryCodeAttempts,
       createdAt: order.createdAt,
       assignedAt: order.assignedAt,
+      bills: billList,
     },
     items,
     prescriptions: prescriptionList,
@@ -767,6 +768,7 @@ router.post('/orders/:orderId/submit-bills', async (req: Request, res: Response)
     billTotal,
     finalAmount,
     status: updatedOrder.status,
+    order: updatedOrder,
   });
 });
 

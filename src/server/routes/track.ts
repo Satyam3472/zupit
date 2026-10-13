@@ -304,6 +304,7 @@ router.get('/:token', async (req: Request, res: Response): Promise<void> => {
         rider,
         bills: billsList,
         final_amount: finalAmount,
+        finalAmount: finalAmount,
         totalAmount: finalAmount,
         paymentStatus: order.paymentStatus,
         paymentMethod: order.paymentMethod,
