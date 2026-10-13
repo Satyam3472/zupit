@@ -924,6 +924,12 @@ router.post('/orders/:orderId/verify-delivery', async (req: Request, res: Respon
     success: true,
     message: 'Order delivered successfully!',
     orderNumber: order.orderNumber,
+    order: {
+      id: order.id,
+      orderNumber: order.orderNumber,
+      status: 'delivered',
+      paymentStatus: 'paid',
+    },
   });
 });
 
