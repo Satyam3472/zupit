@@ -266,6 +266,15 @@ router.get('/home', async (req: Request, res: Response): Promise<void> => {
   });
 });
 
+async function resolveOrderId(param: any): Promise<string> {
+  const val = (Array.isArray(param) ? param[0] : param) || '';
+  if (!val) return '';
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+  if (isUuid) return val;
+  const [found] = await db.select({ id: orders.id }).from(orders).where(eq(orders.orderNumber, val)).limit(1);
+  return found ? found.id : val;
+}
+
 /**
  * POST /api/v1/rider/orders/:orderId/accept
  * Atomic statement:
@@ -275,8 +284,7 @@ router.get('/home', async (req: Request, res: Response): Promise<void> => {
  */
 router.post('/orders/:orderId/accept', async (req: Request, res: Response): Promise<void> => {
   const riderId = req.rider!.userId;
-  const orderIdParam = req.params.orderId;
-  const orderId = (Array.isArray(orderIdParam) ? orderIdParam[0] : orderIdParam) || '';
+  const orderId = await resolveOrderId(req.params.orderId);
 
   const [rider] = await db
     .select()
@@ -340,8 +348,7 @@ router.post('/orders/:orderId/accept', async (req: Request, res: Response): Prom
  */
 router.get('/orders/:orderId', async (req: Request, res: Response): Promise<void> => {
   const riderId = req.rider!.userId;
-  const orderIdParam = req.params.orderId;
-  const orderId = (Array.isArray(orderIdParam) ? orderIdParam[0] : orderIdParam) || '';
+  const orderId = await resolveOrderId(req.params.orderId);
 
   const [order] = await db
     .select()
@@ -447,8 +454,7 @@ router.get('/orders/:orderId', async (req: Request, res: Response): Promise<void
  */
 router.post('/orders/:orderId/start-buying', async (req: Request, res: Response): Promise<void> => {
   const riderId = req.rider!.userId;
-  const orderIdParam = req.params.orderId;
-  const orderId = (Array.isArray(orderIdParam) ? orderIdParam[0] : orderIdParam) || '';
+  const orderId = await resolveOrderId(req.params.orderId);
 
   const [order] = await db
     .select()
@@ -504,8 +510,7 @@ router.post('/orders/:orderId/start-buying', async (req: Request, res: Response)
  */
 router.post('/orders/:orderId/items/:itemId/status', async (req: Request, res: Response): Promise<void> => {
   const riderId = req.rider!.userId;
-  const orderIdParam = req.params.orderId;
-  const orderId = (Array.isArray(orderIdParam) ? orderIdParam[0] : orderIdParam) || '';
+  const orderId = await resolveOrderId(req.params.orderId);
   const itemIdParam = req.params.itemId;
   const itemId = (Array.isArray(itemIdParam) ? itemIdParam[0] : itemIdParam) || '';
   const { status, notes } = req.body;
@@ -559,8 +564,7 @@ const AddBillSchema = z.object({
 
 router.post('/orders/:orderId/bills', async (req: Request, res: Response): Promise<void> => {
   const riderId = req.rider!.userId;
-  const orderIdParam = req.params.orderId;
-  const orderId = (Array.isArray(orderIdParam) ? orderIdParam[0] : orderIdParam) || '';
+  const orderId = await resolveOrderId(req.params.orderId);
 
   const [order] = await db
     .select()
@@ -619,8 +623,7 @@ router.post('/orders/:orderId/bills', async (req: Request, res: Response): Promi
  */
 router.delete('/orders/:orderId/bills/:billId', async (req: Request, res: Response): Promise<void> => {
   const riderId = req.rider!.userId;
-  const orderIdParam = req.params.orderId;
-  const orderId = (Array.isArray(orderIdParam) ? orderIdParam[0] : orderIdParam) || '';
+  const orderId = await resolveOrderId(req.params.orderId);
   const billIdParam = req.params.billId;
   const billId = (Array.isArray(billIdParam) ? billIdParam[0] : billIdParam) || '';
 
@@ -650,8 +653,7 @@ router.delete('/orders/:orderId/bills/:billId', async (req: Request, res: Respon
  */
 router.post('/orders/:orderId/submit-bills', async (req: Request, res: Response): Promise<void> => {
   const riderId = req.rider!.userId;
-  const orderIdParam = req.params.orderId;
-  const orderId = (Array.isArray(orderIdParam) ? orderIdParam[0] : orderIdParam) || '';
+  const orderId = await resolveOrderId(req.params.orderId);
   const { customerConfirmedByCall } = req.body;
 
   const [order] = await db
@@ -781,8 +783,7 @@ router.post('/orders/:orderId/submit-bills', async (req: Request, res: Response)
  */
 router.post('/orders/:orderId/verify-delivery', async (req: Request, res: Response): Promise<void> => {
   const riderId = req.rider!.userId;
-  const orderIdParam = req.params.orderId;
-  const orderId = (Array.isArray(orderIdParam) ? orderIdParam[0] : orderIdParam) || '';
+  const orderId = await resolveOrderId(req.params.orderId);
   const { deliveryCode, paymentMethodSelected } = req.body;
 
   const [order] = await db
