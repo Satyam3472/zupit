@@ -495,8 +495,10 @@
   function renderOrderDetailView(ord) {
     // Header
     document.getElementById('detail-order-number').textContent = ord.orderNumber;
-    const statusPill = document.getElementById('detail-order-status-pill');
-    statusPill.outerHTML = getStatusBadge(ord.status);
+    const statusContainer = document.getElementById('detail-order-status-container') || document.getElementById('detail-order-status-pill');
+    if (statusContainer) {
+      statusContainer.innerHTML = getStatusBadge(ord.status);
+    }
     document.getElementById('detail-order-source').textContent = `Source: ${ord.source.toUpperCase()}`;
     document.getElementById('detail-order-date').textContent = `Placed: ${new Date(ord.createdAt).toLocaleString()}`;
     document.getElementById('detail-order-code').textContent = ord.deliveryCode || '----';
