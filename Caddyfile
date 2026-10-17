@@ -1,0 +1,61 @@
+# ==============================================================================
+# Caddy Reverse Proxy & Automatic TLS Configuration for Zupit Production
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. Main Application: Proxies / to app:3000
+# ------------------------------------------------------------------------------
+{$DOMAIN_NAME:localhost} {
+    encode zstd gzip
+
+    header {
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "SAMEORIGIN"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        -Server
+    }
+
+    # Static assets aggressive caching
+    @static {
+        path /assets/* /public/*
+    }
+    header @static Cache-Control "public, max-age=31536000, immutable"
+
+    reverse_proxy app:3000 {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+
+        health_uri /api/v1/health
+        health_interval 15s
+        health_timeout 3s
+    }
+
+    log {
+        output stdout
+        format console
+    }
+}
+
+# ------------------------------------------------------------------------------
+# 2. File Storage Gateway: Proxies files.DOMAIN to minio:9000
+# Presigned URLs work seamlessly from browsers. MinIO Console is unreachable.
+# ------------------------------------------------------------------------------
+files.{$DOMAIN_NAME:localhost} {
+    encode zstd gzip
+
+    # Preserve host and protocol headers for accurate S3 HMAC signatures
+    reverse_proxy minio:9000 {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+
+    log {
+        output stdout
+        format console
+    }
+}

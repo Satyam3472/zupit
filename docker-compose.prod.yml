@@ -1,0 +1,331 @@
+# ==============================================================================
+# Zupit Production Stack - docker-compose.prod.yml
+# Target: Single Ubuntu 24.04 VPS (2 vCPU, 4 GB RAM)
+# ==============================================================================
+
+name: zupit
+
+services:
+  # ----------------------------------------------------------------------------
+  # 1. Database (PostgreSQL 16 Alpine, tuned for 4 GB RAM host)
+  # ----------------------------------------------------------------------------
+  db:
+    image: postgres:16-alpine
+    container_name: zupit-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-zupit_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}
+      POSTGRES_DB: ${POSTGRES_DB:-zupit_prod}
+      POSTGRES_INITDB_ARGS: "--locale=C.UTF-8 --encoding=UTF8"
+      LC_ALL: C.UTF-8
+      LANG: C.UTF-8
+      TZ: Asia/Kolkata
+    command: >
+      postgres
+      -c shared_buffers=512MB
+      -c effective_cache_size=1536MB
+      -c work_mem=16MB
+      -c maintenance_work_mem=128MB
+      -c max_connections=60
+      -c checkpoint_completion_target=0.9
+      -c wal_buffers=16MB
+      -c default_statistics_target=100
+      -c timezone=Asia/Kolkata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - internal
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  # ----------------------------------------------------------------------------
+  # 2. Database Migration Runner (One-off job)
+  # ----------------------------------------------------------------------------
+  migrate:
+    build:
+      context: .
+      target: migrator
+    image: zupit-migrator:${GIT_SHA:-latest}
+    container_name: zupit-migrator
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - path: .env.production
+        required: false
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-zupit_admin}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-zupit_prod}
+    networks:
+      - internal
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  # ----------------------------------------------------------------------------
+  # 3. Web Application (Node 22 Alpine, non-root, read-only root, 1g limit)
+  # ----------------------------------------------------------------------------
+  app:
+    build:
+      context: .
+      target: runner
+    image: zupit-app:${GIT_SHA:-latest}
+    container_name: zupit-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    env_file:
+      - path: .env.production
+        required: false
+      - path: .env
+        required: false
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgres://${POSTGRES_USER:-zupit_admin}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-zupit_prod}
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /app/.next/cache
+    volumes:
+      - uploads_data:/app/public/uploads
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:3000/api/v1/health').then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))\""]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - internal
+      - edge
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  # ----------------------------------------------------------------------------
+  # 4. Background Worker (pg-boss, disabled until Phase 7)
+  # ----------------------------------------------------------------------------
+  worker:
+    build:
+      context: .
+      target: runner
+    image: zupit-app:${GIT_SHA:-latest}
+    container_name: zupit-worker
+    profiles:
+      - worker
+    command: ["node", "-e", "console.log('Worker profile active; pg-boss task runner pending Phase 7 implementation.'); setInterval(() => {}, 60000);"]
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    env_file:
+      - path: .env.production
+        required: false
+      - path: .env
+        required: false
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://${POSTGRES_USER:-zupit_admin}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-zupit_prod}
+    read_only: true
+    tmpfs:
+      - /tmp
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    networks:
+      - internal
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  # ----------------------------------------------------------------------------
+  # 5. MinIO S3-Compatible Storage
+  # ----------------------------------------------------------------------------
+  minio:
+    image: minio/minio:RELEASE.2024-05-10T01-41-38Z
+    container_name: zupit-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-zupit_minio_admin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD required}
+      MINIO_BROWSER: "off"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9000/minio/health/live || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - internal
+      - edge
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  # ----------------------------------------------------------------------------
+  # 6. MinIO Bucket Initialization & Lifecycle Rules (One-off job)
+  # ----------------------------------------------------------------------------
+  minio-init:
+    image: minio/mc:latest
+    container_name: zupit-minio-init
+    restart: "no"
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-zupit_minio_admin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    entrypoint: >
+      /bin/sh -c "
+      echo 'Configuring MinIO client alias...';
+      mc alias set localminio http://minio:9000 \"$$MINIO_ROOT_USER\" \"$$MINIO_ROOT_PASSWORD\";
+      echo 'Creating zupit-private bucket...';
+      mc mb --ignore-existing localminio/zupit-private;
+      echo 'Enforcing private access (disabling anonymous download/listing)...';
+      mc anonymous set none localminio/zupit-private;
+      echo 'Applying lifecycle rule: abort abandoned multipart uploads after 1 day...';
+      mc ilm rule add localminio/zupit-private --abort-incomplete-multipart-days 1 || true;
+      echo 'MinIO initialization complete.';
+      exit 0;
+      "
+    networks:
+      - internal
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  # ----------------------------------------------------------------------------
+  # 7. Caddy Edge Reverse Proxy & Automatic TLS
+  # ----------------------------------------------------------------------------
+  caddy:
+    image: caddy:2-alpine
+    container_name: zupit-caddy
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_started
+      minio:
+        condition: service_started
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp" # HTTP/3 QUIC
+    environment:
+      DOMAIN_NAME: ${DOMAIN_NAME:-localhost}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - edge
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  # ----------------------------------------------------------------------------
+  # 8. Nightly Automated Database Backup (02:30 IST, custom format, rclone sync)
+  # ----------------------------------------------------------------------------
+  backup:
+    build:
+      context: ./docker/backup
+      dockerfile: Dockerfile
+    image: zupit-backup:${GIT_SHA:-latest}
+    container_name: zupit-backup
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - path: .env.production
+        required: false
+      - path: .env
+        required: false
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-zupit_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}
+      POSTGRES_DB: ${POSTGRES_DB:-zupit_prod}
+      TZ: Asia/Kolkata
+      BACKUP_REMOTE_BUCKET: ${BACKUP_REMOTE_BUCKET:-}
+      BACKUP_REMOTE_TYPE: ${BACKUP_REMOTE_TYPE:-s3}
+      BACKUP_REMOTE_PROVIDER: ${BACKUP_REMOTE_PROVIDER:-AWS}
+      BACKUP_REMOTE_ACCESS_KEY: ${BACKUP_REMOTE_ACCESS_KEY:-}
+      BACKUP_REMOTE_SECRET_KEY: ${BACKUP_REMOTE_SECRET_KEY:-}
+      BACKUP_REMOTE_ENDPOINT: ${BACKUP_REMOTE_ENDPOINT:-}
+      BACKUP_REMOTE_REGION: ${BACKUP_REMOTE_REGION:-ap-south-1}
+    volumes:
+      - backup_data:/backups
+    networks:
+      - internal
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+# ------------------------------------------------------------------------------
+# Persistent Named Volumes
+# ------------------------------------------------------------------------------
+volumes:
+  postgres_data:
+    name: zupit_postgres_data
+  minio_data:
+    name: zupit_minio_data
+  uploads_data:
+    name: zupit_uploads_data
+  caddy_data:
+    name: zupit_caddy_data
+  caddy_config:
+    name: zupit_caddy_config
+  backup_data:
+    name: zupit_backup_data
+
+# ------------------------------------------------------------------------------
+# Isolated Networks
+# ------------------------------------------------------------------------------
+networks:
+  # Internal: completely isolated from the internet (db, minio, app, worker, backup)
+  internal:
+    driver: bridge
+    internal: true
+  # Edge: reverse proxy interface accepting public web traffic
+  edge:
+    driver: bridge
