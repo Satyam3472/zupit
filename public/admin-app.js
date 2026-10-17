@@ -365,28 +365,43 @@
       const itemsInfo = `${ord.itemsCount} med${ord.prescriptionsCount > 0 ? ` + ${ord.prescriptionsCount} Rx` : ''}`;
 
       return `
-        <tr class="${rowClass}" data-order-id="${ord.id}" style="cursor: pointer;">
-          <td>
-            <strong style="color: #1D3F8F; font-size: 14px;">${escapeHtml(ord.orderNumber)}</strong>
-            ${isOverdue ? `<span title="Waiting for rider longer than ${timeoutMins} minutes!" style="color: #D97706; margin-left: 4px; font-weight: 700;">⚠️</span>` : ''}
+        <tr class="${rowClass} admin-order-row" data-order-id="${ord.id}" style="cursor: pointer;">
+          <td class="col-sticky-order td-order-header">
+            <div class="card-mobile-top">
+              <strong style="color: #1D3F8F; font-size: 14px;">${escapeHtml(ord.orderNumber)}</strong>
+              ${isOverdue ? `<span title="Waiting for rider longer than ${timeoutMins} minutes!" style="color: #D97706; margin-left: 4px; font-weight: 700;">⚠️</span>` : ''}
+              <span class="card-mobile-status">${statusBadge}</span>
+            </div>
           </td>
-          <td>
+          <td class="col-priority td-placed">
+            <span class="card-field-label">Placed:</span>
             <div style="font-weight: 500;">${timeStr}</div>
             <div style="font-size: 11px; color: #64748B;">${dateStr}</div>
           </td>
-          <td>
+          <td class="col-priority td-customer">
+            <span class="card-field-label">Customer:</span>
             <div style="font-weight: 600;">${escapeHtml(ord.deliveryName)}</div>
             <div style="font-size: 12px; color: #64748B;">${escapeHtml(ord.deliveryPhone)}</div>
           </td>
-          <td style="max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(ord.deliveryAddress)}">
+          <td class="col-low-priority td-address" style="max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(ord.deliveryAddress)}">
+            <span class="card-field-label">Address:</span>
             <div>${escapeHtml(ord.deliveryAddress)}</div>
             ${ord.deliveryLandmark ? `<div style="font-size: 11px; color: #64748B;">${escapeHtml(ord.deliveryLandmark)}</div>` : ''}
           </td>
-          <td><span style="font-size: 13px; color: #475569;">${itemsInfo}</span></td>
-          <td>${riderBadge}</td>
-          <td class="col-num" style="font-weight: 700; color: #0F172A;">₹${parseFloat(totalVal).toFixed(2)}</td>
-          <td>${statusBadge}</td>
-          <td style="text-align: right;">
+          <td class="col-low-priority td-items">
+            <span class="card-field-label">Items:</span>
+            <span style="font-size: 13px; color: #475569;">${itemsInfo}</span>
+          </td>
+          <td class="col-priority td-rider">
+            <span class="card-field-label">Rider:</span>
+            ${riderBadge}
+          </td>
+          <td class="col-num col-priority td-total" style="font-weight: 700; color: #0F172A;">
+            <span class="card-field-label">Total:</span>
+            ₹${parseFloat(totalVal).toFixed(2)}
+          </td>
+          <td class="col-priority td-status-desktop">${statusBadge}</td>
+          <td class="col-priority td-action" style="text-align: right;">
             <button type="button" class="btn-secondary btn-view-order-row" data-id="${ord.id}" style="height: 30px; padding: 0 10px; font-size: 12px;">
               View →
             </button>
@@ -396,7 +411,7 @@
     }).join('');
 
     // Attach row click handlers to open order detail
-    tbody.querySelectorAll('tr').forEach((row) => {
+    tbody.querySelectorAll('tr.admin-order-row').forEach((row) => {
       row.addEventListener('click', (e) => {
         const id = row.getAttribute('data-order-id');
         if (id) openOrderDetail(id);
@@ -2167,6 +2182,96 @@
       console.warn('Could not populate riders filter:', err);
     }
   }
+
+  // Responsive UI controls (Rail toggle, Mobile hamburger, Mobile filters)
+  const btnRailToggle = document.getElementById('btn-rail-toggle');
+  const btnAdminHamburger = document.getElementById('btn-admin-hamburger');
+  const adminSidebar = document.querySelector('.admin-sidebar');
+  const adminBackdrop = document.getElementById('admin-sidebar-backdrop');
+
+  btnRailToggle?.addEventListener('click', () => {
+    adminSidebar?.classList.toggle('expanded');
+  });
+
+  btnAdminHamburger?.addEventListener('click', () => {
+    adminSidebar?.classList.add('open');
+    adminBackdrop?.classList.add('open');
+  });
+
+  adminBackdrop?.addEventListener('click', () => {
+    adminSidebar?.classList.remove('open');
+    adminBackdrop?.classList.remove('open');
+  });
+
+  document.querySelectorAll('.admin-menu-item').forEach((item) => {
+    item.addEventListener('click', () => {
+      if (window.innerWidth < 1024) {
+        adminSidebar?.classList.remove('open');
+        adminBackdrop?.classList.remove('open');
+      }
+    });
+  });
+
+  // Mobile Filters Drawer
+  const btnToggleFilters = document.getElementById('btn-toggle-filters-mobile');
+  const btnCloseFilters = document.getElementById('btn-close-filters-mobile');
+  const filterBar = document.querySelector('.admin-filter-bar');
+  const filterBackdrop = document.getElementById('admin-filters-backdrop');
+
+  function openMobileFilters() {
+    filterBar?.classList.add('open');
+    filterBackdrop?.classList.add('open');
+  }
+  function closeMobileFilters() {
+    filterBar?.classList.remove('open');
+    filterBackdrop?.classList.remove('open');
+  }
+
+  btnToggleFilters?.addEventListener('click', openMobileFilters);
+  btnCloseFilters?.addEventListener('click', closeMobileFilters);
+  filterBackdrop?.addEventListener('click', closeMobileFilters);
+
+  // Expose global helpers on window for tests and navigation
+  window.setScreen = setScreen;
+  window.openOrderDetail = openOrderDetail;
+  window.viewOrderDetail = openOrderDetail;
+
+  // Global Dialog & Drawer Accessibility
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.admin-modal-overlay.open').forEach((modal) => {
+        modal.classList.remove('open');
+      });
+      const drawer = document.getElementById('drawer-rider-ledger');
+      if (drawer && drawer.classList.contains('open')) {
+        closeDrawer();
+      }
+      if (adminSidebar && adminSidebar.classList.contains('open')) {
+        adminSidebar.classList.remove('open');
+        if (adminBackdrop) adminBackdrop.classList.remove('open');
+      }
+      if (filterBar && filterBar.classList.contains('open')) {
+        closeMobileFilters();
+      }
+    }
+    if (e.key === 'Tab') {
+      const activeModal = document.querySelector('.admin-modal-overlay.open, .admin-drawer.open');
+      if (activeModal) {
+        const focusables = activeModal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+        if (focusables.length > 0) {
+          const first = focusables[0];
+          const last = focusables[focusables.length - 1];
+          if (e.shiftKey && document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          } else if (!e.shiftKey && document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
+      }
+    }
+  });
 
   // Initialization
   async function init() {
