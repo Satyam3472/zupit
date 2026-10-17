@@ -12,10 +12,10 @@ WORKDIR /app
 # Install build dependencies for native compilation (e.g., argon2) on Alpine
 RUN apk add --no-cache python3 make g++ libc6-compat
 
-# Enable pnpm via Corepack and configure store directory
+# Install pnpm and configure store directory
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN npm install -g pnpm@9
 RUN pnpm config set store-dir /pnpm/store
 
 # Copy package manifests
@@ -34,7 +34,7 @@ WORKDIR /app
 
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN npm install -g pnpm@9
 
 # Copy installed dependencies from deps stage
 COPY --from=deps /app/node_modules ./node_modules
@@ -56,7 +56,7 @@ WORKDIR /app
 
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN npm install -g pnpm@9
 
 # Copy dependencies and migration files
 COPY --from=deps /app/node_modules ./node_modules
@@ -81,7 +81,7 @@ ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 
 RUN apk add --no-cache libc6-compat && \
-    corepack enable && corepack prepare pnpm@latest --activate
+    npm install -g pnpm@9
 
 # Setup directories required for read-only root compatibility & tmpfs mounts
 RUN mkdir -p /app/.next/cache /app/public/uploads /tmp && \

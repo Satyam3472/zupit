@@ -28,6 +28,11 @@ echo "========================================================================"
 
 export GIT_SHA="${TARGET_SHA}"
 
+if ! docker image inspect "zupit-app:${TARGET_SHA}" >/dev/null 2>&1; then
+  echo "⚠️ [ROLLBACK INFO] Target image zupit-app:${TARGET_SHA} does not exist locally. No previous deployment to roll back to."
+  exit 0
+fi
+
 echo "[INFO] Rolling back app container to zupit-app:${TARGET_SHA}..."
 docker compose -f "${COMPOSE_FILE}" up -d --no-deps app
 
