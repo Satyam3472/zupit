@@ -35,6 +35,7 @@ export async function cleanTestDb() {
         audit_logs,
         otp_codes
       CASCADE;
+      ALTER SEQUENCE order_number_seq RESTART WITH 10001;
     `);
 
     // Reset rider balances to 0.00
@@ -44,9 +45,10 @@ export async function cleanTestDb() {
           status = CASE WHEN phone = '9835123499' THEN 'pending_approval'::rider_status ELSE 'approved'::rider_status END;
     `);
 
-    // Ensure payments_enabled is false
+    // Ensure payments_enabled is false and delivery_fee is 25
     await client.query(`
       UPDATE settings SET value = 'false' WHERE key = 'payments_enabled';
+      UPDATE settings SET value = '25' WHERE key = 'delivery_fee';
     `);
 
     // Reset in-memory rate limits on test server if running
