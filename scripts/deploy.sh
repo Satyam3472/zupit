@@ -104,8 +104,16 @@ ${COMPOSE_CMD} run --rm migrate
 echo "[3/4] Launching Zupit production services..."
 ${COMPOSE_CMD} up -d minio minio-init edge app backup
 
-# Allow edge and app 5 seconds to bind
-sleep 5
+# Wait for app container to report healthy
+echo "Waiting for Zupit application to report healthy..."
+for i in $(seq 1 30); do
+  STATUS=$(docker inspect --format='{{.State.Health.Status}}' zupit_app 2>/dev/null || echo '')
+  if [ "${STATUS}" = "healthy" ]; then
+    echo "✅ Zupit application is healthy."
+    break
+  fi
+  sleep 2
+done
 
 # 4. Run automated smoke tests and verify existing app baseline
 echo "[4/4] Running smoke tests and verifying existing app baseline..."
