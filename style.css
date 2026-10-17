@@ -172,18 +172,9 @@ textarea,
   background-color: #E4E8F0;
 }
 
-/* Top Demo Control Toolbar */
+/* Top Demo Control Toolbar (Removed on mobile & hidden globally) */
 .demo-toolbar {
-  width: 100%;
-  max-width: 480px;
-  background-color: #FFFFFF;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-card);
-  padding: 10px 14px;
-  margin-bottom: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  display: none !important;
 }
 
 .demo-toolbar-header {

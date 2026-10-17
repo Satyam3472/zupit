@@ -47,44 +47,7 @@
 
   <div class="prototype-viewport-wrapper">
     
-    <!-- DEMO TOOLBAR: Interactive Testing Controls for Evaluators & Reviewers -->
-    <header class="demo-toolbar" aria-label="Demo Testing Controls">
-      <div class="demo-toolbar-header">
-        <div class="demo-toolbar-title">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
-            <polyline points="2 17 12 22 22 17"></polyline>
-            <polyline points="2 12 12 17 22 12"></polyline>
-          </svg>
-          <span>Zupit Prototype Controller</span>
-        </div>
-        <span class="demo-toolbar-tag" id="demo-current-screen-tag">Screen 1: New Order</span>
-      </div>
-      
-      <!-- Frame Jumpers & Next State Walkthrough -->
-      <div class="demo-toolbar-actions">
-        <button type="button" class="demo-pill-btn active demo-frame-btn" data-state="placed" title="Order Placed Frame">Placed</button>
-        <button type="button" class="demo-pill-btn demo-frame-btn" data-state="assigned" title="Rider Assigned Frame">Rider Assigned</button>
-        <button type="button" class="demo-pill-btn demo-frame-btn" data-state="buying" title="Buying Medicines Frame">Buying</button>
-        <button type="button" class="demo-pill-btn demo-frame-btn" data-state="bill_online" title="Bill Ready Online Payment Frame">Bill (Online)</button>
-        <button type="button" class="demo-pill-btn demo-frame-btn" data-state="bill_cash" title="Bill Ready Cash Payment Frame">Bill (Cash)</button>
-        <button type="button" class="demo-pill-btn demo-frame-btn" data-state="out_for_delivery" title="Out for Delivery Frame">Out for Delivery</button>
-        <button type="button" class="demo-pill-btn demo-frame-btn" data-state="cancelled" title="Cancelled Order Frame">Cancelled</button>
-        <button type="button" class="demo-pill-btn demo-frame-btn" data-state="delivered" title="Delivered Frame">Delivered</button>
-      </div>
 
-      <!-- State Simulation Toggles -->
-      <div class="demo-toolbar-actions" style="margin-top: 2px;">
-        <button type="button" class="demo-pill-btn" id="demo-next-state-btn" style="background:#1D3F8F; color:#FFFFFF; font-weight:600;">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-          <span>Next State</span>
-        </button>
-        <button type="button" class="demo-pill-btn" id="demo-toggle-offline">Toggle Offline Banner</button>
-        <button type="button" class="demo-pill-btn" id="demo-toggle-upload-error">Test Upload Error</button>
-        <button type="button" class="demo-pill-btn" id="demo-toggle-returning">Toggle Returning Card</button>
-        <button type="button" class="demo-pill-btn warning-pill" id="demo-trigger-unavailable">Item Unavailable Alert</button>
-      </div>
-    </header>
 
     <!-- MOBILE DEVICE SHELL (360x800 Standard Mobile Dimensions) -->
     <main class="mobile-device-shell" id="zupit-mobile-app">

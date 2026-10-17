@@ -737,12 +737,12 @@ function bindGlobalEvents() {
     }
   });
 
-  // Demo Toolbar Listeners
-  document.getElementById('demo-toggle-offline').addEventListener('click', toggleOfflineBanner);
-  document.getElementById('demo-toggle-upload-error').addEventListener('click', toggleUploadErrorSimulation);
-  document.getElementById('demo-toggle-returning').addEventListener('click', toggleReturningCustomerSeed);
-  document.getElementById('demo-trigger-unavailable').addEventListener('click', () => navigateToScreen(5));
-  document.getElementById('demo-next-state-btn').addEventListener('click', advanceToNextState);
+  // Demo Toolbar Listeners (Optional / guarded)
+  document.getElementById('demo-toggle-offline')?.addEventListener('click', toggleOfflineBanner);
+  document.getElementById('demo-toggle-upload-error')?.addEventListener('click', toggleUploadErrorSimulation);
+  document.getElementById('demo-toggle-returning')?.addEventListener('click', toggleReturningCustomerSeed);
+  document.getElementById('demo-trigger-unavailable')?.addEventListener('click', () => navigateToScreen(5));
+  document.getElementById('demo-next-state-btn')?.addEventListener('click', advanceToNextState);
   
   document.querySelectorAll('.demo-frame-btn').forEach(btn => {
     btn.addEventListener('click', () => {
