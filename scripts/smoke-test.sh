@@ -63,14 +63,23 @@ UPLOAD_URL=$(echo "${PRESIGN_RES}" | grep -o '"uploadUrl":"[^"]*"' | cut -d'"' -
 SIGNED_URL=$(echo "${PRESIGN_RES}" | grep -o '"signedUrl":"[^"]*"' | cut -d'"' -f4 || true)
 
 if [ -n "${FILE_KEY}" ] && [ -n "${UPLOAD_URL}" ]; then
+  TARGET_UPLOAD="${UPLOAD_URL}"
+  if [[ "${TARGET_UPLOAD}" != http* ]]; then
+    TARGET_UPLOAD="${BASE_URL}${TARGET_UPLOAD}"
+  fi
+  TARGET_DOWNLOAD="${SIGNED_URL}"
+  if [[ "${TARGET_DOWNLOAD}" != http* ]]; then
+    TARGET_DOWNLOAD="${BASE_URL}${TARGET_DOWNLOAD}"
+  fi
+
   # Upload binary data
-  UPLOAD_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X PUT "${BASE_URL}${UPLOAD_URL}" \
+  UPLOAD_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X PUT "${TARGET_UPLOAD}" \
     -H "Content-Type: image/jpeg" \
     --data-binary "${TEST_IMG_PAYLOAD}" || echo "000")
 
   if [ "${UPLOAD_CODE}" -ge 200 ] && [ "${UPLOAD_CODE}" -lt 300 ]; then
     # Fetch uploaded file back using signed URL
-    DOWNLOADED=$(curl -s "${BASE_URL}${SIGNED_URL}" || echo "")
+    DOWNLOADED=$(curl -s "${TARGET_DOWNLOAD}" || echo "")
     if [ "${DOWNLOADED}" = "${TEST_IMG_PAYLOAD}" ]; then
       echo "✅ OK (round-trip verified)"
     else
