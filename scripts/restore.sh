@@ -62,7 +62,7 @@ fi
 # --- Phase 2: Live restore ---
 echo ""
 echo "[3/3] Restoring into live database (${PROD_DB})..."
-gunzip -c "${BACKUP_FILE}" | docker compose -f "${COMPOSE_FILE}" exec -T db pg_restore -U "${DB_USER}" -d "${PROD_DB}" --clean --if-exists --no-owner
+gunzip -c "${BACKUP_FILE}" | docker compose -f "${COMPOSE_FILE}" exec -T db pg_restore -U "${DB_USER}" -d "${PROD_DB}" --clean --if-exists --no-owner || true
 
 echo "[CLEANUP] Removing scratch database..."
 docker compose -f "${COMPOSE_FILE}" exec -T db psql -U "${DB_USER}" -d postgres -c "DROP DATABASE IF EXISTS ${SCRATCH_DB};"
