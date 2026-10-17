@@ -30,8 +30,8 @@ echo "========================================================================"
 
 # --- Phase 1: Restore into scratch database ---
 echo "[1/3] Creating temporary scratch database (${SCRATCH_DB})..."
-docker compose -f "${COMPOSE_FILE}" exec -T db psql -U "${DB_USER}" -c "DROP DATABASE IF EXISTS ${SCRATCH_DB};"
-docker compose -f "${COMPOSE_FILE}" exec -T db psql -U "${DB_USER}" -c "CREATE DATABASE ${SCRATCH_DB};"
+docker compose -f "${COMPOSE_FILE}" exec -T db psql -U "${DB_USER}" -d postgres -c "DROP DATABASE IF EXISTS ${SCRATCH_DB};"
+docker compose -f "${COMPOSE_FILE}" exec -T db psql -U "${DB_USER}" -d postgres -c "CREATE DATABASE ${SCRATCH_DB};"
 
 echo "[2/3] Restoring backup into ${SCRATCH_DB} for schema and data validation..."
 gunzip -c "${BACKUP_FILE}" | docker compose -f "${COMPOSE_FILE}" exec -T db pg_restore -U "${DB_USER}" -d "${SCRATCH_DB}" --no-owner || true
@@ -55,7 +55,7 @@ read -r -p "Type 'RESTORE_LIVE_DATABASE' to proceed with production overwrite: "
 if [ "${CONFIRM_INPUT}" != "RESTORE_LIVE_DATABASE" ]; then
   echo "🚫 [CANCELLED] Restore aborted by user. Live database was not touched."
   echo "Cleaning up scratch database..."
-  docker compose -f "${COMPOSE_FILE}" exec -T db psql -U "${DB_USER}" -c "DROP DATABASE IF EXISTS ${SCRATCH_DB};"
+  docker compose -f "${COMPOSE_FILE}" exec -T db psql -U "${DB_USER}" -d postgres -c "DROP DATABASE IF EXISTS ${SCRATCH_DB};"
   exit 0
 fi
 
@@ -65,7 +65,7 @@ echo "[3/3] Restoring into live database (${PROD_DB})..."
 gunzip -c "${BACKUP_FILE}" | docker compose -f "${COMPOSE_FILE}" exec -T db pg_restore -U "${DB_USER}" -d "${PROD_DB}" --clean --if-exists --no-owner
 
 echo "[CLEANUP] Removing scratch database..."
-docker compose -f "${COMPOSE_FILE}" exec -T db psql -U "${DB_USER}" -c "DROP DATABASE IF EXISTS ${SCRATCH_DB};"
+docker compose -f "${COMPOSE_FILE}" exec -T db psql -U "${DB_USER}" -d postgres -c "DROP DATABASE IF EXISTS ${SCRATCH_DB};"
 
 echo "========================================================================"
 echo "✅ [SUCCESS] Database restored successfully into ${PROD_DB}."
