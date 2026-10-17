@@ -29,8 +29,11 @@ if [ "${EXISTING_ADMINS}" -gt 0 ]; then
   exit 1
 fi
 
-echo "[INFO] No existing admin found. Running initial database seed..."
-docker compose --env-file "${ENV_FILE}" -f "${COMPOSE_FILE}" run --rm migrate pnpm db:seed
+if docker compose --env-file "${ENV_FILE}" -f "${COMPOSE_FILE}" ps -q app >/dev/null 2>&1; then
+  docker compose --env-file "${ENV_FILE}" -f "${COMPOSE_FILE}" exec -T app pnpm db:seed
+else
+  docker compose --env-file "${ENV_FILE}" -f "${COMPOSE_FILE}" run --rm --entrypoint pnpm migrate db:seed
+fi
 
 echo "✅ [SUCCESS] Database successfully seeded with settings, owner admin, and serviceable areas."
 
