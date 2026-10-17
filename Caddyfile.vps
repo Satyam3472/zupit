@@ -1,0 +1,65 @@
+# ==============================================================================
+# Zupit VPS Caddy Configuration (Mode A: :3100 / Mode B compatible)
+# ==============================================================================
+
+:3100 {
+    # 1. Request Body Size Limit: 12MB (accommodates 8MB prescription uploads + multipart overhead)
+    request_body {
+        max_size 12MB
+    }
+
+    # 2. Compression: gzip and zstd for optimal mobile bandwidth usage
+    encode zstd gzip
+
+    # 3. Security Headers
+    header {
+        # Prevent MIME-sniffing
+        X-Content-Type-Options "nosniff"
+        # Clickjacking protection
+        X-Frame-Options "DENY"
+        # Referrer privacy
+        Referrer-Policy "strict-origin-when-cross-origin"
+        # Browser Permissions Policy (allows camera for prescription uploads on self)
+        Permissions-Policy "camera=(self)"
+        # Content Security Policy
+        Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: *; connect-src 'self' *;"
+        # Strip server signature
+        -Server
+    }
+
+    # 4. Block debug paths
+    @next_debug {
+        path /_next/development/* /_next/webpack-hmr* /_next/debug*
+    }
+    respond @next_debug 404
+
+    # 5. Route MinIO S3 bucket requests (/zupit-private/*) directly to MinIO
+    # Host header is preserved so HMAC presigned signatures remain valid
+    @s3_bucket {
+        path /zupit-private/*
+    }
+    reverse_proxy @s3_bucket minio:9000 {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+
+    # 6. Route all web application traffic to Zupit app:3000
+    reverse_proxy app:3000 {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+
+        health_uri /api/v1/health
+        health_interval 15s
+        health_timeout 3s
+    }
+
+    # 7. Logging
+    log {
+        output stdout
+        format console
+    }
+}
