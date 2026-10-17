@@ -121,9 +121,16 @@
 
       <!-- SHARED TOP BAR: Wordmark, Hindi/English Toggle, Help Icon -->
       <nav class="app-top-bar" aria-label="Main Navigation">
-        <div class="brand-wrapper" id="brand-logo-trigger" role="button" tabindex="0" title="Zupit Jamui - Go to Home">
-          <span class="brand-name">Zupit</span>
-          <span class="brand-dot" aria-hidden="true"></span>
+        <div class="top-bar-left-group">
+          <div class="brand-wrapper" id="brand-logo-trigger" role="button" tabindex="0" title="Zupit Jamui - Go to Home">
+            <span class="brand-name">Zupit</span>
+            <span class="brand-dot" aria-hidden="true"></span>
+          </div>
+          <!-- Desktop Navigation Links (Middle-Left) -->
+          <div class="desktop-nav-links" id="desktop-nav-links">
+            <button type="button" class="desktop-nav-link active" id="desktop-nav-order">New order</button>
+            <button type="button" class="desktop-nav-link" id="desktop-nav-track">Track order</button>
+          </div>
         </div>
         
         <div class="top-bar-controls">
@@ -144,6 +151,11 @@
               <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
               <line x1="12" y1="17" x2="12.01" y2="17"></line>
             </svg>
+          </button>
+
+          <!-- Desktop Call or WhatsApp button (>= 768) -->
+          <button type="button" class="desktop-help-btn" id="desktop-help-btn" aria-label="Call or WhatsApp Customer Support">
+            Call or WhatsApp
           </button>
         </div>
       </nav>
@@ -178,6 +190,8 @@
         <!-- ========================================== -->
         <section class="screen-view active" id="screen-1-view">
           <div class="screen-padding">
+            <div class="new-order-layout">
+              <div class="new-order-form-col">
             
             <!-- Returning Customer Quick Card -->
             <div class="returning-customer-card" id="returning-customer-card" style="display: none;">
@@ -193,7 +207,7 @@
                 Welcome back, <strong>Sunita</strong>. Deliver to Station Road, near Gandhi Chowk?
               </p>
               <div class="returning-actions">
-                <button type="button" class="returning-btn-yes" id="btn-returning-yes">
+                <button type="button" class="returning-btn-yes" id="btn-use-returning-details">
                   Yes, use this
                 </button>
                 <button type="button" class="returning-btn-change" id="btn-returning-change">
@@ -205,7 +219,7 @@
             <!-- Visual Hero Card -->
             <div class="home-hero-card">
               <span class="hero-tag" id="hero-tag-text">Fast Jamui Delivery</span>
-              <h1 class="hero-heading" id="hero-heading-text">Medicines delivered to your door</h1>
+              <h1 class="hero-heading" id="page-title-text">Medicines delivered to your door</h1>
               <p class="hero-subhead" id="hero-subhead-text">Free delivery on every order. You pay after you see the bill.</p>
             </div>
 
@@ -442,7 +456,90 @@
               </p>
             </div>
 
-          </div>
+          </div> <!-- end .new-order-form-col -->
+
+          <!-- DESKTOP RIGHT SIDEBAR (>= 1024, sticky at top 88px) -->
+          <div class="new-order-sidebar-col">
+            <!-- 1. How It Works Card -->
+            <div class="card desktop-info-card">
+              <h3 class="sidebar-card-title">How Zupit Works</h3>
+              <ol class="how-it-works-steps">
+                <li class="how-step-item">
+                  <span class="how-step-num">1</span>
+                  <div class="how-step-content">
+                    <strong class="how-step-title">Tell us what you need</strong>
+                    <p class="how-step-desc">Type medicine names or upload doctor's prescription.</p>
+                  </div>
+                </li>
+                <li class="how-step-item">
+                  <span class="how-step-num">2</span>
+                  <div class="how-step-content">
+                    <strong class="how-step-title">Local rider buys from chemist</strong>
+                    <p class="how-step-desc">Purchased directly from verified pharmacies in Jamui.</p>
+                  </div>
+                </li>
+                <li class="how-step-item">
+                  <span class="how-step-num">3</span>
+                  <div class="how-step-content">
+                    <strong class="how-step-title">Inspect bill & pay at doorstep</strong>
+                    <p class="how-step-desc">Verify physical chemist bill before paying COD or UPI.</p>
+                  </div>
+                </li>
+              </ol>
+            </div>
+
+            <!-- 2. Order Summary Card with Place Order CTA -->
+            <div class="card desktop-summary-card">
+              <h3 class="sidebar-card-title">Order Summary</h3>
+              <div class="summary-details">
+                <div class="summary-line">
+                  <span class="summary-label">Medicines</span>
+                  <span class="summary-val" id="desktop-summary-med-count">0 items</span>
+                </div>
+                <div class="summary-line">
+                  <span class="summary-label">Prescriptions</span>
+                  <span class="summary-val" id="desktop-summary-rx-count">0 uploaded</span>
+                </div>
+                <div class="summary-line">
+                  <span class="summary-label">Delivery to</span>
+                  <span class="summary-val" id="desktop-summary-address">Not entered yet</span>
+                </div>
+                <div class="summary-line">
+                  <span class="summary-label">Payment Choice</span>
+                  <span class="summary-val" id="desktop-summary-payment">Cash on delivery</span>
+                </div>
+                <div class="summary-line total-line">
+                  <span class="summary-label">Delivery Fee</span>
+                  <span class="summary-val text-success" style="color: var(--color-success); font-weight: 700;">FREE</span>
+                </div>
+              </div>
+              <button type="button" class="btn-primary desktop-place-order-btn" id="desktop-place-order-btn">
+                <span>Place order</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                  <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+              </button>
+            </div>
+
+            <!-- 3. Help Card with Call & WhatsApp -->
+            <div class="card desktop-help-card">
+              <h3 class="sidebar-card-title">Need Help Ordering?</h3>
+              <p style="font-size: 13px; color: var(--color-text-secondary); margin-bottom: 12px;">We are available 24/7 for Jamui residents.</p>
+              <div class="sidebar-help-actions">
+                <a href="tel:+916207856200" class="btn-secondary help-contact-btn" id="btn-desktop-call">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                  <span>Call: 62078 56200</span>
+                </a>
+                <a href="https://wa.me/916207856200" target="_blank" rel="noopener noreferrer" class="btn-secondary help-contact-btn" id="btn-desktop-wa">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                  <span>WhatsApp</span>
+                </a>
+              </div>
+            </div>
+          </div> <!-- end .new-order-sidebar-col -->
+        </div> <!-- end .new-order-layout -->
+      </div> <!-- end .screen-padding -->
 
           <!-- Pinned Sticky Bottom Primary Action -->
           <div class="sticky-action-container">
@@ -617,58 +714,64 @@
 
             <!-- Main Tracking View Content -->
             <div id="tracking-active-content" style="display: flex; flex-direction: column; gap: 14px;">
-              <!-- Order Header with Order ID and Status Pill -->
-              <div class="tracking-header-card">
-                <div>
-                  <span style="font-size: 13px; color: var(--color-text-secondary);" id="tracking-header-label">Tracking Order</span>
-                  <div style="font-size: 18px; font-weight: 700; color: var(--color-text-primary);" id="tracking-order-id">ZP-10482</div>
-                  <div class="tracking-live-indicator" id="tracking-poll-status">
-                    <span class="live-dot"></span>
-                    <span id="tracking-poll-status-text">Updated just now</span>
-                  </div>
-                </div>
-                <div class="status-pill status-placed" id="tracking-status-pill">
-                  <span class="status-dot"></span>
-                  <span id="status-pill-text">Placed</span>
-                </div>
-              </div>
-
-              <!-- Item Unavailable Alert Card with 3 buttons -->
-              <div class="item-unavailable-banner-card" id="tracking-item-unavailable-alert" style="display: none;">
-                <div class="unavailable-header">
-                  <svg class="unavailable-warning-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-                    <line x1="12" y1="9" x2="12" y2="13"></line>
-                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                  </svg>
+              
+              <!-- LEFT COLUMN (5 cols on desktop, sticky) -->
+              <div class="tracking-col-left">
+                <!-- Order Header with Order ID and Status Pill -->
+                <div class="tracking-header-card">
                   <div>
-                    <h2 class="unavailable-text" id="track-unavailable-title">Item not available at pharmacy</h2>
-                    <p style="font-size: 14px; color: var(--color-text-secondary); margin-top: 4px;" id="track-unavailable-desc">
-                      An item was not available at the pharmacy.
-                    </p>
+                    <span style="font-size: 13px; color: var(--color-text-secondary);" id="tracking-header-label">Tracking Order</span>
+                    <div style="font-size: 18px; font-weight: 700; color: var(--color-text-primary);" id="tracking-order-id">ZP-10482</div>
+                    <div class="tracking-live-indicator" id="tracking-poll-status">
+                      <span class="live-dot"></span>
+                      <span id="tracking-poll-status-text">Updated just now</span>
+                    </div>
+                  </div>
+                  <div class="status-pill status-placed" id="tracking-status-pill">
+                    <span class="status-dot"></span>
+                    <span id="status-pill-text">Placed</span>
                   </div>
                 </div>
 
-                <!-- Three Action Buttons: Skip it | Call me | Cancel order -->
-                <div class="unavailable-choices-stack">
-                  <button type="button" class="choice-option-btn primary-choice" id="btn-track-skip-item">
-                    <span id="track-skip-btn-text">Skip it</span>
-                  </button>
-                  <button type="button" class="choice-option-btn" id="btn-track-call-me">
-                    <span id="track-call-btn-text">Call me</span>
-                  </button>
-                  <button type="button" class="choice-option-btn cancel-choice" id="btn-track-cancel-order">
-                    <span id="track-cancel-btn-text">Cancel order</span>
-                  </button>
+                <!-- Vertical Status Stepper -->
+                <div class="stepper-card">
+                  <div id="stepper-nodes-wrap">
+                    <!-- Injected dynamically by app.js -->
+                  </div>
                 </div>
-              </div>
+              </div> <!-- end .tracking-col-left -->
 
-              <!-- Vertical Status Stepper -->
-              <div class="stepper-card">
-                <div id="stepper-nodes-wrap">
-                  <!-- Injected dynamically by app.js -->
+              <!-- RIGHT COLUMN (7 cols on desktop) -->
+              <div class="tracking-col-right">
+                <!-- Item Unavailable Alert Card with 3 buttons -->
+                <div class="item-unavailable-banner-card" id="tracking-item-unavailable-alert" style="display: none;">
+                  <div class="unavailable-header">
+                    <svg class="unavailable-warning-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                      <line x1="12" y1="9" x2="12" y2="13"></line>
+                      <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                    <div>
+                      <h2 class="unavailable-text" id="track-unavailable-title">Item not available at pharmacy</h2>
+                      <p style="font-size: 14px; color: var(--color-text-secondary); margin-top: 4px;" id="track-unavailable-desc">
+                        An item was not available at the pharmacy.
+                      </p>
+                    </div>
+                  </div>
+
+                  <!-- Three Action Buttons: Skip it | Call me | Cancel order -->
+                  <div class="unavailable-choices-stack">
+                    <button type="button" class="choice-option-btn primary-choice" id="btn-track-skip-item">
+                      <span id="track-skip-btn-text">Skip it</span>
+                    </button>
+                    <button type="button" class="choice-option-btn" id="btn-track-call-me">
+                      <span id="track-call-btn-text">Call me</span>
+                    </button>
+                    <button type="button" class="choice-option-btn cancel-choice" id="btn-track-cancel-order">
+                      <span id="track-cancel-btn-text">Cancel order</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
 
             <!-- Rider Card (Appears after assignment) -->
             <div class="rider-card" id="rider-info-card" style="display: none;">
@@ -747,7 +850,7 @@
             <!-- Delivery Code Card (Appears when out for delivery) -->
             <div class="delivery-code-card" id="delivery-code-card" style="display: none;">
               <span class="delivery-code-title" id="delivery-code-title">Tell this code to the rider</span>
-              <div class="code-digits-grid">
+              <div class="code-digits-grid track-delivery-code-badge" id="track-delivery-code" data-testid="delivery-code">
                 <span class="code-digit-box" id="code-d1">4</span>
                 <span class="code-digit-box" id="code-d2">8</span>
                 <span class="code-digit-box" id="code-d3">2</span>
@@ -778,6 +881,8 @@
             <button type="button" class="cancel-order-link" id="cancel-order-link-btn">
               Cancel order
             </button>
+
+            </div> <!-- end .tracking-col-right -->
 
             </div> <!-- /tracking-active-content -->
 

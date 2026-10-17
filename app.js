@@ -564,9 +564,28 @@ function bindGlobalEvents() {
 
   // Place Order Submit
   document.getElementById('place-order-submit-btn').addEventListener('click', handlePlaceOrder);
+  document.getElementById('desktop-place-order-btn')?.addEventListener('click', handlePlaceOrder);
+
+  // Desktop Top Navigation Links
+  document.getElementById('desktop-nav-order')?.addEventListener('click', () => {
+    window.history.pushState({}, '', '/');
+    navigateToScreen(1);
+  });
+  document.getElementById('desktop-nav-track')?.addEventListener('click', () => {
+    window.history.pushState({}, '', '/track');
+    navigateToScreen(3);
+  });
+  document.getElementById('desktop-help-btn')?.addEventListener('click', () => {
+    toggleHelpSheet(true);
+  });
+
+  // Live update address on desktop summary
+  document.getElementById('field-address')?.addEventListener('input', updateDesktopOrderSummary);
+  document.getElementById('field-landmark')?.addEventListener('input', updateDesktopOrderSummary);
 
   // Returning Customer Quick Card Buttons
-  document.getElementById('btn-returning-yes').addEventListener('click', applyReturningCustomerData);
+  const btnReturning = document.getElementById('btn-use-returning-details') || document.getElementById('btn-returning-yes');
+  if (btnReturning) btnReturning.addEventListener('click', applyReturningCustomerData);
   document.getElementById('btn-returning-change').addEventListener('click', dismissReturningCustomerCard);
 
   // History Popstate Handling
@@ -753,18 +772,27 @@ function navigateToScreen(screenNum) {
     targetView.classList.add('active');
   }
 
-  // Update bottom navigation bar
+  // Update bottom navigation bar & desktop top nav
   const navOrder = document.getElementById('nav-order-btn');
   const navTrack = document.getElementById('nav-track-btn');
+  const deskOrder = document.getElementById('desktop-nav-order');
+  const deskTrack = document.getElementById('desktop-nav-track');
+
   if (screenNum === 1) {
-    navOrder.classList.add('active');
-    navTrack.classList.remove('active');
+    if (navOrder) navOrder.classList.add('active');
+    if (navTrack) navTrack.classList.remove('active');
+    if (deskOrder) deskOrder.classList.add('active');
+    if (deskTrack) deskTrack.classList.remove('active');
   } else if (screenNum === 3 || screenNum === 4 || screenNum === 5 || screenNum === 6 || screenNum === 7) {
-    navTrack.classList.add('active');
-    navOrder.classList.remove('active');
+    if (navTrack) navTrack.classList.add('active');
+    if (navOrder) navOrder.classList.remove('active');
+    if (deskTrack) deskTrack.classList.add('active');
+    if (deskOrder) deskOrder.classList.remove('active');
   } else {
-    navOrder.classList.remove('active');
-    navTrack.classList.remove('active');
+    if (navOrder) navOrder.classList.remove('active');
+    if (navTrack) navTrack.classList.remove('active');
+    if (deskOrder) deskOrder.classList.remove('active');
+    if (deskTrack) deskTrack.classList.remove('active');
   }
 
   // Scroll mobile frame to top
@@ -818,7 +846,8 @@ function applyLanguage(lang) {
 
   // Screen 1: New Order
   document.getElementById('hero-tag-text').textContent = dict.heroTag;
-  document.getElementById('hero-heading-text').textContent = dict.heroHeading;
+  const heroHeadingEl = document.getElementById('page-title-text') || document.getElementById('hero-heading-text');
+  if (heroHeadingEl) heroHeadingEl.textContent = dict.heroHeading;
   document.getElementById('hero-subhead-text').textContent = dict.heroSubhead;
 
   document.getElementById('sec1-title-text').textContent = dict.sec1Title;
@@ -1038,6 +1067,31 @@ function switchInputMode(mode) {
   }
 }
 
+// Desktop Order Summary Synchronizer
+function updateDesktopOrderSummary() {
+  const medCountEl = document.getElementById('desktop-summary-med-count');
+  const rxCountEl = document.getElementById('desktop-summary-rx-count');
+  const addrEl = document.getElementById('desktop-summary-address');
+  const payEl = document.getElementById('desktop-summary-payment');
+
+  if (medCountEl) {
+    const validCount = AppState.medicines.filter((m) => m.name && m.name.trim().length > 0).length;
+    medCountEl.textContent = `${validCount} item${validCount === 1 ? '' : 's'}`;
+  }
+  if (rxCountEl) {
+    const rxCount = AppState.prescriptions.length;
+    rxCountEl.textContent = `${rxCount} file${rxCount === 1 ? '' : 's'}`;
+  }
+  if (addrEl) {
+    const addr = document.getElementById('field-address')?.value?.trim();
+    const lmark = document.getElementById('field-landmark')?.value?.trim();
+    addrEl.textContent = addr ? `${addr}${lmark ? ', ' + lmark : ''}` : 'Not entered yet';
+  }
+  if (payEl) {
+    payEl.textContent = AppState.paymentMethod === 'cod' ? 'Cash on delivery' : 'Pay online after bill';
+  }
+}
+
 // Medicine Rows Management
 function renderMedicineRows() {
   const container = document.getElementById('medicine-rows-list');
@@ -1049,7 +1103,7 @@ function renderMedicineRows() {
     row.className = 'medicine-row';
     row.innerHTML = `
       <div class="medicine-row-header">
-        <input type="text" class="med-input-name" placeholder="${dict.medNamePlaceholder}" value="${med.name}" data-index="${index}" aria-label="Medicine name">
+        <input type="text" class="med-input-name med-name-input" placeholder="${dict.medNamePlaceholder}" value="${med.name}" data-index="${index}" aria-label="Medicine name">
         ${AppState.medicines.length > 1 ? `
           <button type="button" class="med-delete-btn" data-index="${index}" aria-label="Remove item" title="Remove">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1071,12 +1125,15 @@ function renderMedicineRows() {
     container.appendChild(row);
   });
 
+  updateDesktopOrderSummary();
+
   // Bind dynamic inputs
   container.querySelectorAll('.med-input-name').forEach(input => {
     input.addEventListener('input', (e) => {
       AppState.medicines[e.target.dataset.index].name = e.target.value;
       const itemsErr = document.getElementById('items-error-msg');
       if (itemsErr) itemsErr.classList.remove('visible');
+      updateDesktopOrderSummary();
     });
   });
 
@@ -1290,7 +1347,7 @@ function renderPrescriptionThumbnails() {
 
   AppState.prescriptions.forEach((rx, idx) => {
     const thumb = document.createElement('div');
-    thumb.className = 'thumb-item';
+    thumb.className = 'thumb-item rx-thumb-item prescription-thumb';
     if (rx.previewUrl) {
       thumb.innerHTML = `
         <img src="${rx.previewUrl}" class="thumb-img" alt="Prescription ${idx + 1}">
@@ -1403,6 +1460,7 @@ function selectPaymentMethod(method) {
       codCard.setAttribute('aria-checked', 'false');
     }
   }
+  updateDesktopOrderSummary();
 }
 
 // Form Submission & Inline Validation with Scroll-to-First-Error
@@ -1770,12 +1828,7 @@ async function fetchTrackingData(token, isBackground = false) {
 
     // Render Screen
     if (AppState.currentScreen === 4) {
-      if (order.status === 'delivered') {
-        // If delivered, can show screen 7 or render on tracking screen
-        navigateToScreen(7);
-      } else {
-        renderTrackingScreen();
-      }
+      renderTrackingScreen();
     } else if (AppState.currentScreen === 7 && order.status === 'delivered') {
       renderDeliveredScreen();
     }
@@ -2465,3 +2518,30 @@ function showToast(message) {
     toast.classList.remove('visible');
   }, 2200);
 }
+
+// Dialog accessibility: Esc to close & Focus trapping
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-overlay.active').forEach(modal => {
+      modal.classList.remove('active');
+    });
+  }
+  if (e.key === 'Tab') {
+    const activeModal = document.querySelector('.modal-overlay.active');
+    if (activeModal) {
+      const focusables = activeModal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+      if (focusables.length > 0) {
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    }
+  }
+});
+
