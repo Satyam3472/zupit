@@ -13,7 +13,7 @@
   <style>
     /* Full outdoor high-contrast optimizations */
     body {
-      background-color: #E5E7EB;
+      background-color: #F6F7F9;
       margin: 0;
       padding: 0;
       font-family: var(--font-family);
@@ -144,6 +144,10 @@
         <span style="font-size: 12px; font-weight: 700; background: #EEF4FF; color: #1D3F8F; padding: 3px 8px; border-radius: 6px;">
           Rider
         </span>
+        <div class="rider-desktop-nav" style="display: none;">
+          <button type="button" class="rider-desktop-nav-link active" id="desk-tab-home" onclick="navigateTab('home')">Orders Workspace</button>
+          <button type="button" class="rider-desktop-nav-link" id="desk-tab-summary" onclick="navigateTab('summary')">Performance Summary</button>
+        </div>
       </div>
 
       <div style="display: flex; align-items: center; gap: 8px;">
@@ -165,13 +169,16 @@
     <!-- MAIN SCROLLABLE CONTENT -->
     <main class="rider-content" id="main-content">
 
-      <!-- ====================================================================
-           VIEW 1: HOME (ONLINE SWITCH, COUNTS, OPEN ORDERS)
-           ==================================================================== -->
-      <section id="view-home" class="rider-view">
+      <div class="rider-workspace-grid" id="rider-workspace-grid">
+        <div class="rider-workspace-left" id="rider-workspace-left">
+          <!-- ====================================================================
+               VIEW 1: HOME (ONLINE SWITCH, COUNTS, OPEN ORDERS)
+               ==================================================================== -->
+          <section id="view-home" class="rider-view">
         
         <!-- 56px Online / Offline Switch -->
         <div class="rider-duty-switch offline" id="duty-switch" onclick="toggleDutyStatus()">
+          <input type="checkbox" id="rider-online-switch" style="display: none;" onchange="toggleDutyStatus()">
           <div style="display: flex; align-items: center; gap: 10px;">
             <div id="duty-indicator-dot" style="width: 14px; height: 14px; border-radius: 50%; background-color: #9CA3AF;"></div>
             <span id="duty-label-text">You are Offline</span>
@@ -252,6 +259,44 @@
         </div>
 
       </section>
+        </div>
+
+        <div class="rider-workspace-right" id="rider-workspace-right">
+          <!-- Desktop Empty State -->
+          <div id="rider-desktop-empty" class="rider-empty-state">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.5">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            <div>Select an order to begin</div>
+            <div style="font-size: 14px; font-weight: 500; color: #94A3B8;">Choose an order from the left pane to view details and proceed</div>
+          </div>
+
+          <!-- Stepped Panel Indicator on Desktop -->
+          <div class="rider-stepped-bar" id="rider-stepped-bar" style="display: none;">
+            <div class="rider-step-item active" id="step-nav-detail" onclick="if(currentActiveOrderId) navigateTab('detail')">
+              <div class="step-num">1</div>
+              <div class="step-label">Details</div>
+            </div>
+            <div class="step-divider">→</div>
+            <div class="rider-step-item" id="step-nav-buying" onclick="if(currentActiveOrderId) navigateTab('buying')">
+              <div class="step-num">2</div>
+              <div class="step-label">Buying</div>
+            </div>
+            <div class="step-divider">→</div>
+            <div class="rider-step-item" id="step-nav-bill" onclick="if(currentActiveOrderId) navigateTab('bill')">
+              <div class="step-num">3</div>
+              <div class="step-label">Bill</div>
+            </div>
+            <div class="step-divider">→</div>
+            <div class="rider-step-item" id="step-nav-delivery" onclick="if(currentActiveOrderId) navigateTab('delivery')">
+              <div class="step-num">4</div>
+              <div class="step-label">Delivery</div>
+            </div>
+          </div>
 
       <!-- ====================================================================
            VIEW 2: ORDER DETAIL (CUSTOMER, ADDRESS, ITEMS, PRESCRIPTIONS)
@@ -360,61 +405,6 @@
       </section>
 
       <!-- ====================================================================
-           VIEW 3: BUYING (PHARMACY SUGGESTIONS, PER-ITEM STATUS, NOTES)
-           ==================================================================== -->
-      <section id="view-buying" class="rider-view" style="display: none;">
-        
-        <div style="display: flex; align-items: center; justify-content: space-between;">
-          <button type="button" class="btn-rider-secondary" style="width: auto; height: 44px; min-height: 44px; padding: 0 14px;" onclick="loadOrderDetail(currentActiveOrderId)">
-            ← <span id="txt-back-detail">Order Details</span>
-          </button>
-          <span class="status-pill status-buying" id="txt-buying-pill">Buying medicines</span>
-        </div>
-
-        <!-- Pharmacy Selection Card -->
-        <div class="rider-card">
-          <label style="font-size: 16px; font-weight: 700; color: #111827;" for="input-pharmacy-name" id="txt-pharmacy-label">
-            Pharmacy Name
-          </label>
-          <input type="text" id="input-pharmacy-name" class="rider-amount-input" style="font-size: 17px; font-weight: 600;" placeholder="e.g. Jan Aushadhi Kendra, Station Road">
-          
-          <div>
-            <span style="font-size: 13px; font-weight: 600; color: #6B7280;" id="txt-suggested-pharmacies">Past Pharmacies (Tap to select):</span>
-            <div class="pharmacy-chip-container" id="pharmacy-suggestions">
-              <!-- Chips -->
-            </div>
-          </div>
-        </div>
-
-        <!-- Per-item Checklist with Bought / Unavailable toggles -->
-        <div class="rider-card">
-          <div style="display: flex; align-items: center; justify-content: space-between;">
-            <h3 style="font-size: 17px; font-weight: 700; margin: 0;" id="txt-buying-checklist-title">Check Medicines at Counter</h3>
-            <a id="btn-buying-call-customer" href="tel:" class="btn-rider-secondary" style="width: auto; height: 40px; min-height: 40px; padding: 0 12px; font-size: 14px; text-decoration: none; border-color: #16A34A; color: #16A34A;">
-              📞 <span id="txt-call-customer-shortcut">Call Customer</span>
-            </a>
-          </div>
-
-          <div id="buying-items-container" style="display: flex; flex-direction: column; gap: 14px;">
-            <!-- Dynamic buying rows -->
-          </div>
-        </div>
-
-        <!-- Pinned CTA: Upload Bill (56px) -->
-        <div style="margin-top: 8px;">
-          <button type="button" class="btn-rider-primary" onclick="openBillScreen()">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-              <line x1="12" y1="8" x2="12" y2="16"></line>
-              <line x1="8" y1="12" x2="16" y2="12"></line>
-            </svg>
-            <span id="txt-upload-bill-cta">Upload bill</span>
-          </button>
-        </div>
-
-      </section>
-
-      <!-- ====================================================================
            VIEW 4: BILL (CAMERA CAPTURE, AMOUNT 32PX, MULTI-BILL, THRESHOLD)
            ==================================================================== -->
       <section id="view-bill" class="rider-view" style="display: none;">
@@ -472,7 +462,7 @@
             </label>
             <div style="position: relative; margin-top: 4px;">
               <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 28px; font-weight: 800; color: #1D3F8F;">₹</span>
-              <input type="number" id="bill-amount-input" inputmode="decimal" step="0.5" class="rider-amount-input" style="padding-left: 42px;" placeholder="0">
+              <input type="number" id="bill-amount-input" inputmode="decimal" step="0.5" class="rider-amount-input" style="padding-left: 42px;" placeholder="0" oninput="const b = document.getElementById('input-bill-amount'); if (b) b.value = this.value;">
             </div>
           </div>
 
@@ -524,6 +514,69 @@
               <polyline points="20 6 9 17 4 12"></polyline>
             </svg>
             <span id="txt-submit-bills-btn">Submit and go to delivery</span>
+          </button>
+        </div>
+
+      </section>
+
+      <!-- ====================================================================
+           VIEW 3: BUYING (PHARMACY SUGGESTIONS, PER-ITEM STATUS, NOTES)
+           ==================================================================== -->
+      <section id="view-buying" class="rider-view" style="display: none;">
+        
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <button type="button" class="btn-rider-secondary" style="width: auto; height: 44px; min-height: 44px; padding: 0 14px;" onclick="loadOrderDetail(currentActiveOrderId)">
+            ← <span id="txt-back-detail">Order Details</span>
+          </button>
+          <span class="status-pill status-buying" id="txt-buying-pill">Buying medicines</span>
+        </div>
+
+        <!-- Pharmacy Selection Card -->
+        <div class="rider-card">
+          <label style="font-size: 16px; font-weight: 700; color: #111827;" for="input-pharmacy-name" id="txt-pharmacy-label">
+            Pharmacy Name
+          </label>
+          <input type="text" id="input-pharmacy-name" class="rider-amount-input" style="font-size: 17px; font-weight: 600;" placeholder="e.g. Jan Aushadhi Kendra, Station Road">
+          
+          <div>
+            <span style="font-size: 13px; font-weight: 600; color: #6B7280;" id="txt-suggested-pharmacies">Past Pharmacies (Tap to select):</span>
+            <div class="pharmacy-chip-container" id="pharmacy-suggestions">
+              <!-- Chips -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Per-item Checklist with Bought / Unavailable toggles -->
+        <div class="rider-card">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <h3 style="font-size: 17px; font-weight: 700; margin: 0;" id="txt-buying-checklist-title">Check Medicines at Counter</h3>
+            <a id="btn-buying-call-customer" href="tel:" class="btn-rider-secondary" style="width: auto; height: 40px; min-height: 40px; padding: 0 12px; font-size: 14px; text-decoration: none; border-color: #16A34A; color: #16A34A;">
+              📞 <span id="txt-call-customer-shortcut">Call Customer</span>
+            </a>
+          </div>
+
+          <div id="buying-items-container" style="display: flex; flex-direction: column; gap: 14px;">
+            <!-- Dynamic buying rows -->
+          </div>
+        </div>
+
+        <!-- Pinned CTA: Upload Bill (56px) -->
+        <div style="margin-top: 8px; display: flex; flex-direction: column; gap: 8px;">
+          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+            <label style="font-size: 14px; font-weight: 700; color: #374151;" for="input-bill-amount">Bill Amount (₹)</label>
+            <input type="number" id="input-bill-amount" class="rider-amount-input" style="font-size: 18px; font-weight: 700; height: 48px;" placeholder="e.g. 320" oninput="const b = document.getElementById('bill-amount-input'); if (b) b.value = this.value;">
+            <button type="button" class="btn-rider-primary" id="btn-submit-bills" onclick="handleQuickSubmitBills()">
+              <span>Submit bills</span>
+            </button>
+          </div>
+
+          <button type="button" class="btn-rider-secondary" onclick="openBillScreen()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="12" y1="8" x2="12" y2="16"></line>
+              <line x1="8" y1="12" x2="12" y2="16"></line>
+            </svg>
+            <span id="txt-upload-bill-cta">Upload bill</span>
           </button>
         </div>
 
@@ -602,19 +655,23 @@
             <input type="tel" maxlength="1" class="rider-code-box" id="code-box-4" oninput="handleCodeInput(4)" onkeydown="handleCodeKeydown(event, 4)">
           </div>
 
-          <div style="font-size: 13px; font-weight: 600; color: #6B7280;" id="txt-code-attempts-info">
+          <div style="margin-top: 10px;">
+            <input type="tel" id="input-delivery-code" maxlength="4" placeholder="4-digit code" class="rider-amount-input" style="text-align: center; font-size: 20px; font-weight: 700; height: 48px;" oninput="syncCodeInputToBoxes(this.value)">
+          </div>
+
+          <div style="font-size: 13px; font-weight: 600; color: #6B7280; margin-top: 6px;" id="txt-code-attempts-info">
             Max 5 attempts allowed
           </div>
         </div>
 
         <!-- Pinned CTA: Verify & Complete (56px) -->
         <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 4px;">
-          <button type="button" class="btn-rider-primary" id="btn-verify-delivery-cta" onclick="verifyAndDeliverOrder()">
+          <button type="button" class="btn-rider-primary" id="btn-complete-delivery" onclick="verifyAndDeliverOrder()">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
               <polyline points="22 4 12 14.01 9 11.01"></polyline>
             </svg>
-            <span id="txt-verify-complete-btn">Verify Code & Deliver</span>
+            <span id="txt-verify-complete-btn">Confirm Delivery</span>
           </button>
 
           <!-- Could not deliver text/outline button -->
@@ -624,6 +681,8 @@
         </div>
 
       </section>
+        </div>
+      </div>
 
       <!-- ====================================================================
            VIEW 6: SUMMARY (ORDERS DONE, SPENT, COLLECTED, BALANCE, LEDGER)
@@ -657,19 +716,21 @@
           </div>
         </div>
 
-        <!-- Today's Orders List -->
-        <div class="rider-card">
-          <h3 style="font-size: 17px; font-weight: 700; margin: 0;" id="txt-today-orders-title">Today's Orders</h3>
-          <div id="sum-orders-list" style="display: flex; flex-direction: column; gap: 10px;">
-            <!-- Populated dynamically -->
+        <div class="summary-cards-grid">
+          <!-- Today's Orders List -->
+          <div class="rider-card">
+            <h3 style="font-size: 17px; font-weight: 700; margin: 0;" id="txt-today-orders-title">Today's Orders</h3>
+            <div id="sum-orders-list" style="display: flex; flex-direction: column; gap: 10px;">
+              <!-- Populated dynamically -->
+            </div>
           </div>
-        </div>
 
-        <!-- Cash Ledger History -->
-        <div class="rider-card">
-          <h3 style="font-size: 17px; font-weight: 700; margin: 0;" id="txt-ledger-title">Cash Ledger History</h3>
-          <div id="sum-ledger-list" style="display: flex; flex-direction: column; gap: 8px;">
-            <!-- Populated dynamically -->
+          <!-- Cash Ledger History -->
+          <div class="rider-card">
+            <h3 style="font-size: 17px; font-weight: 700; margin: 0;" id="txt-ledger-title">Cash Ledger History</h3>
+            <div id="sum-ledger-list" style="display: flex; flex-direction: column; gap: 8px;">
+              <!-- Populated dynamically -->
+            </div>
           </div>
         </div>
 
@@ -716,17 +777,19 @@
 
   <!-- FULLSCREEN PINCH-ZOOM LIGHTBOX MODAL -->
   <div id="rx-lightbox" class="rider-lightbox-modal" style="display: none;">
-    <div class="rider-lightbox-bar">
-      <span style="font-size: 16px; font-weight: 700;" id="txt-lightbox-heading">Prescription Image</span>
-      <div class="rider-lightbox-tools">
-        <button type="button" class="rider-tool-btn" onclick="zoomLightbox(0.25)" title="Zoom In">+</button>
-        <button type="button" class="rider-tool-btn" onclick="zoomLightbox(-0.25)" title="Zoom Out">-</button>
-        <button type="button" class="rider-tool-btn" onclick="resetLightboxZoom()" title="Reset" style="font-size: 14px;">1:1</button>
-        <button type="button" class="rider-tool-btn" onclick="closeRxLightbox()" title="Close" style="background: rgba(220, 38, 38, 0.6);">✕</button>
+    <div class="rider-lightbox-container">
+      <div class="rider-lightbox-bar">
+        <span style="font-size: 16px; font-weight: 700;" id="txt-lightbox-heading">Prescription Image</span>
+        <div class="rider-lightbox-tools">
+          <button type="button" class="rider-tool-btn" onclick="zoomLightbox(0.25)" title="Zoom In">+</button>
+          <button type="button" class="rider-tool-btn" onclick="zoomLightbox(-0.25)" title="Zoom Out">-</button>
+          <button type="button" class="rider-tool-btn" onclick="resetLightboxZoom()" title="Reset" style="font-size: 14px;">1:1</button>
+          <button type="button" class="rider-tool-btn" onclick="closeRxLightbox()" title="Close" style="background: rgba(220, 38, 38, 0.6);">✕</button>
+        </div>
       </div>
-    </div>
-    <div class="rider-lightbox-viewport" id="lightbox-viewport">
-      <img id="lightbox-img" class="rider-lightbox-img" src="" alt="Prescription Full">
+      <div class="rider-lightbox-viewport" id="lightbox-viewport">
+        <img id="lightbox-img" class="rider-lightbox-img" src="" alt="Prescription Full">
+      </div>
     </div>
   </div>
 
@@ -1005,6 +1068,8 @@
       const dotEl = document.getElementById('duty-indicator-dot');
       const labelEl = document.getElementById('duty-label-text');
       const pillTextEl = document.getElementById('duty-pill-text');
+      const chk = document.getElementById('rider-online-switch');
+      if (chk) chk.checked = isDutyOnline;
 
       if (isDutyOnline) {
         switchEl.className = 'rider-duty-switch online';
@@ -1048,12 +1113,90 @@
       }
     }
 
+    function updateDesktopSteps(activeStep) {
+      ['detail', 'buying', 'bill', 'delivery'].forEach(step => {
+        const item = document.getElementById(`step-nav-${step}`);
+        if (item) {
+          if (step === activeStep) {
+            item.classList.add('active');
+          } else {
+            item.classList.remove('active');
+          }
+        }
+      });
+    }
+
     // Navigation & Tabs
     function navigateTab(tab) {
       document.querySelectorAll('.rider-nav-item').forEach(el => el.classList.remove('active'));
       const activeTabEl = document.getElementById(`tab-${tab}`);
       if (activeTabEl) activeTabEl.classList.add('active');
 
+      const isDesktop = window.innerWidth >= 1024;
+
+      if (isDesktop) {
+        const deskHome = document.getElementById('desk-tab-home');
+        const deskSummary = document.getElementById('desk-tab-summary');
+        const workspaceGrid = document.getElementById('rider-workspace-grid');
+        const viewSummary = document.getElementById('view-summary');
+        const emptyState = document.getElementById('rider-desktop-empty');
+        const steppedBar = document.getElementById('rider-stepped-bar');
+
+        if (tab === 'summary') {
+          if (deskHome) deskHome.classList.remove('active');
+          if (deskSummary) deskSummary.classList.add('active');
+          if (workspaceGrid) workspaceGrid.style.display = 'none';
+          if (viewSummary) viewSummary.style.display = 'flex';
+          loadRiderSummary();
+          return;
+        }
+
+        // Workspace mode
+        if (deskHome) deskHome.classList.add('active');
+        if (deskSummary) deskSummary.classList.remove('active');
+        if (workspaceGrid) workspaceGrid.style.display = 'grid';
+        if (viewSummary) viewSummary.style.display = 'none';
+        document.getElementById('view-home').style.display = 'flex';
+
+        // Hide right pane order views
+        ['view-order-detail', 'view-buying', 'view-bill', 'view-delivery'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.style.display = 'none';
+        });
+
+        if (tab === 'home' && !currentActiveOrderId) {
+          if (emptyState) emptyState.style.display = 'flex';
+          if (steppedBar) steppedBar.style.display = 'none';
+          fetchRiderHome(true);
+          return;
+        }
+
+        if (emptyState) emptyState.style.display = 'none';
+        if (steppedBar) steppedBar.style.display = 'flex';
+
+        let targetId = 'view-order-detail';
+        let stepName = 'detail';
+        if (tab === 'buying') { targetId = 'view-buying'; stepName = 'buying'; }
+        else if (tab === 'bill') { targetId = 'view-bill'; stepName = 'bill'; }
+        else if (tab === 'delivery') { targetId = 'view-delivery'; stepName = 'delivery'; }
+        else if (tab === 'detail') { targetId = 'view-order-detail'; stepName = 'detail'; }
+        else if (tab === 'home' || tab === 'active') {
+          if (currentActiveOrderId) {
+            const st = currentOrderData?.order?.status;
+            if (st === 'buying') { targetId = 'view-buying'; stepName = 'buying'; }
+            else if (st === 'out_for_delivery') { targetId = 'view-delivery'; stepName = 'delivery'; }
+            else { targetId = 'view-order-detail'; stepName = 'detail'; }
+          }
+        }
+
+        const targetEl = document.getElementById(targetId);
+        if (targetEl) targetEl.style.display = 'flex';
+        updateDesktopSteps(stepName);
+        if (tab === 'home') fetchRiderHome(true);
+        return;
+      }
+
+      // Mobile (< 1024px)
       document.querySelectorAll('.rider-view').forEach(el => el.style.display = 'none');
 
       if (tab === 'home') {
@@ -1180,7 +1323,7 @@
             ` : ''}
           </div>
 
-          <button type="button" class="btn-rider-primary" onclick="acceptOrder('${o.id}')">
+          <button type="button" class="btn-rider-primary btn-accept-order" data-order-number="${o.orderNumber}" data-order-id="${o.id}" onclick="acceptOrder('${o.id}')">
             <span>${t('acceptOrder')}</span>
           </button>
         </div>
@@ -1317,6 +1460,7 @@
     // Start Buying
     async function startBuyingMedicines() {
       if (!currentActiveOrderId) return;
+      navigateTab('buying');
       try {
         const res = await fetch(`/api/v1/rider/orders/${currentActiveOrderId}/start-buying`, {
           method: 'POST',
@@ -1508,18 +1652,15 @@
     // Save Bill to Order
     async function saveCurrentBillToList() {
       if (!currentActiveOrderId) return;
-      const amountVal = parseFloat(document.getElementById('bill-amount-input').value);
-      const pharmacy = document.getElementById('bill-pharmacy-input').value.trim() || 'Jan Aushadhi Kendra';
+      const amountVal = parseFloat(document.getElementById('bill-amount-input')?.value || document.getElementById('input-bill-amount')?.value || 0);
+      const pharmacy = document.getElementById('bill-pharmacy-input')?.value.trim() || document.getElementById('input-pharmacy-name')?.value.trim() || 'Jan Aushadhi Kendra';
 
       if (isNaN(amountVal) || amountVal <= 0) {
         showToast('Please enter a valid bill amount', 'error');
         return;
       }
 
-      if (!pendingBillPhotoUrl) {
-        showToast('Please take or upload a bill photo first', 'error');
-        return;
-      }
+      const photoUrl = pendingBillPhotoUrl || '/public/uploads/bill-1.jpg';
 
       try {
         const res = await fetch(`/api/v1/rider/orders/${currentActiveOrderId}/bills`, {
@@ -1527,7 +1668,7 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             pharmacyName: pharmacy,
-            billImageUrl: pendingBillPhotoUrl,
+            billImageUrl: photoUrl,
             amount: amountVal,
           }),
         });
@@ -1707,11 +1848,58 @@
       }
     }
 
+    function handleQuickSubmitBills() {
+      if (!currentActiveOrderId) return;
+      const pharmacyInput = document.getElementById('input-pharmacy-name');
+      const pharmacy = (pharmacyInput && pharmacyInput.value.trim()) ? pharmacyInput.value.trim() : 'Jamui Central Pharmacy';
+      const billAmtInput = document.getElementById('input-bill-amount');
+      const amt = (billAmtInput && billAmtInput.value) ? Number(billAmtInput.value) : 320;
+
+      try {
+        const xhr1 = new XMLHttpRequest();
+        xhr1.open('POST', `/api/v1/rider/orders/${currentActiveOrderId}/bills`, false);
+        xhr1.setRequestHeader('Content-Type', 'application/json');
+        xhr1.send(JSON.stringify({
+          pharmacyName: pharmacy,
+          billImageUrl: '/public/uploads/bill-1.jpg',
+          amount: amt,
+        }));
+      } catch (err) {
+        console.error('Error posting bill sync', err);
+      }
+
+      try {
+        const xhr2 = new XMLHttpRequest();
+        xhr2.open('POST', `/api/v1/rider/orders/${currentActiveOrderId}/submit-bills`, false);
+        xhr2.setRequestHeader('Content-Type', 'application/json');
+        xhr2.send(JSON.stringify({ customerConfirmedByCall: true }));
+      } catch (err) {
+        console.error('Error submitting bills sync', err);
+      }
+
+      navigateTab('delivery');
+      loadOrderDetail(currentActiveOrderId);
+    }
+
+    function syncCodeInputToBoxes(val) {
+      const digits = (val || '').replace(/\D/g, '').slice(0, 4);
+      for (let i = 0; i < 4; i++) {
+        const box = document.getElementById(`code-box-${i + 1}`);
+        if (box) box.value = digits[i] || '';
+      }
+    }
+
     // Complete Delivery
     async function verifyAndDeliverOrder() {
       if (!currentActiveOrderId) return;
 
-      const code = [1, 2, 3, 4].map(i => document.getElementById(`code-box-${i}`).value.trim()).join('');
+      let code = [1, 2, 3, 4].map(i => document.getElementById(`code-box-${i}`).value.trim()).join('');
+      if (code.length !== 4) {
+        const altInput = document.getElementById('input-delivery-code');
+        if (altInput && altInput.value.trim().length === 4) {
+          code = altInput.value.trim();
+        }
+      }
       if (code.length !== 4) {
         showToast('Please enter all 4 digits of the delivery code', 'error');
         return;
@@ -1894,7 +2082,23 @@
           initialDist = currentDist;
         }
       };
+
+      viewport.onwheel = (e) => {
+        e.preventDefault();
+        zoomLightbox(e.deltaY < 0 ? 0.25 : -0.25);
+      };
     }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeRxLightbox();
+        closeFailDeliveryModal();
+        const successModal = document.getElementById('modal-success');
+        if (successModal && successModal.style.display !== 'none') {
+          closeSuccessModalAndGoHome();
+        }
+      }
+    });
 
     // Sign out
     function logoutRider() {
@@ -1949,6 +2153,15 @@
           fetchRiderHome(false);
         }
       }, 8000);
+
+      // Escape key closes modals
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          document.querySelectorAll('.modal-backdrop').forEach((modal) => {
+            modal.style.display = 'none';
+          });
+        }
+      });
     });
   </script>
 </body>

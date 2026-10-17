@@ -4005,3 +4005,206 @@ textarea,
   border-bottom-color: #1D3F8F;
 }
 
+/* ==========================================================================
+   Rider App Responsive Layout (768px, 1024px+, 1280px+)
+   ========================================================================== */
+
+/* Summary page cards: 2 columns from 640px */
+@media (min-width: 640px) {
+  #view-summary .rider-stat-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+/* 768px to 1023px: centered column, max-width 640px */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .rider-app-wrapper {
+    max-width: 640px !important;
+  }
+  .rider-content {
+    padding: 24px 24px 90px;
+  }
+}
+
+/* 1024px+: Two-pane workspace, max-width 1280px centered */
+@media (min-width: 1024px) {
+  .rider-app-wrapper {
+    max-width: 1280px !important;
+    background-color: transparent !important;
+  }
+  .rider-header {
+    border-radius: 12px;
+    margin: 16px 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  }
+  .rider-content {
+    padding: 0 0 40px;
+  }
+  .rider-bottom-nav {
+    display: none !important;
+  }
+
+  .rider-desktop-nav {
+    display: flex !important;
+    align-items: center;
+    gap: 12px;
+    margin-left: 24px;
+  }
+  .rider-desktop-nav-link {
+    background: none;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #4B5563;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .rider-desktop-nav-link:hover {
+    color: #1D3F8F;
+    background-color: #EEF4FF;
+  }
+  .rider-desktop-nav-link.active {
+    color: #1D3F8F;
+    background-color: #EEF4FF;
+  }
+
+  /* Two-pane layout */
+  .rider-workspace-grid {
+    display: grid !important;
+    grid-template-columns: 380px 1fr !important;
+    gap: 24px !important;
+    align-items: start !important;
+    width: 100% !important;
+  }
+  .rider-workspace-left {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+    width: 380px !important;
+    position: sticky;
+    top: 80px;
+  }
+  .rider-workspace-right {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+    flex: 1 !important;
+    min-width: 0 !important;
+  }
+  .rider-empty-state {
+    background: #FFFFFF;
+    border: 2px dashed #CBD5E1;
+    border-radius: 16px;
+    padding: 80px 24px;
+    text-align: center;
+    font-size: 18px;
+    font-weight: 700;
+    color: #64748B;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  /* Stepped Panel Indicator */
+  .rider-stepped-bar {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    background: #FFFFFF;
+    border: 1.5px solid #E2E8F0;
+    border-radius: 12px;
+    padding: 12px 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  }
+  .rider-step-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: all 0.15s ease;
+  }
+  .rider-step-item.active {
+    opacity: 1;
+    font-weight: 700;
+  }
+  .rider-step-item .step-num {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #E2E8F0;
+    color: #475569;
+    font-size: 13px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .rider-step-item.active .step-num {
+    background: #1D3F8F;
+    color: #FFFFFF;
+  }
+  .rider-step-item .step-label {
+    font-size: 14px;
+    color: #1E293B;
+  }
+  .step-divider {
+    color: #94A3B8;
+    font-weight: 700;
+  }
+
+  /* Summary 3 columns from 1024 */
+  #view-summary .rider-stat-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+  .summary-cards-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 20px !important;
+  }
+
+  /* Prescription viewer modal on desktop */
+  .rider-lightbox-modal {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: rgba(0, 0, 0, 0.75);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    z-index: 10000;
+  }
+  .rider-lightbox-container {
+    background: #0F172A;
+    border-radius: 16px;
+    max-width: 880px;
+    width: 100%;
+    max-height: 90dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  }
+  .rider-lightbox-viewport {
+    height: 65dvh !important;
+  }
+}
+
+/* Mobile defaults (< 1024px) */
+@media (max-width: 1023px) {
+  .rider-workspace-grid,
+  .rider-workspace-left,
+  .rider-workspace-right {
+    display: contents !important;
+  }
+  .rider-empty-state,
+  .rider-stepped-bar,
+  .rider-desktop-nav {
+    display: none !important;
+  }
+}
+
