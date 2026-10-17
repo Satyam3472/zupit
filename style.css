@@ -75,19 +75,91 @@
 
 html, body {
   width: 100%;
-  height: 100%;
-  background-color: #E8ECF2;
+  min-height: 100dvh;
+  background-color: var(--color-bg);
   font-family: var(--font-family);
   color: var(--color-text-primary);
   font-size: 16px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
 /* Enforce absolute minimum 13px across all text elements */
 body * {
   min-height: 0;
+}
+
+/* Global Typography & Line Length */
+h1, .hero-heading {
+  font-size: 24px;
+  line-height: 1.25;
+}
+@media (min-width: 1024px) {
+  h1, .hero-heading {
+    font-size: 32px;
+    line-height: 40px;
+  }
+}
+p {
+  max-width: 70ch;
+}
+
+/* Flex and Grid defaults */
+.flex-child,
+[class*="flex"] > * {
+  min-width: 0;
+}
+
+/* Global Focus-Visible & Interactive States */
+:focus-visible {
+  outline: 2px solid var(--color-primary) !important;
+  outline-offset: 2px !important;
+}
+
+.card[onclick],
+.admin-kpi-card,
+.rider-card[onclick],
+.clickable-card,
+.brand-wrapper {
+  cursor: pointer;
+}
+
+/* Touch Targets: minimum 48px across all touch elements */
+button,
+input:not([type="checkbox"]):not([type="radio"]),
+select,
+textarea,
+.btn-primary,
+.btn-secondary,
+.btn-rider-primary,
+.btn-rider-secondary,
+.nav-item-btn {
+  min-height: 48px;
+}
+
+/* Mouse layouts may use 40px controls only in the admin panel */
+.admin-layout-root button,
+.admin-layout-root .btn-primary,
+.admin-layout-root .btn-secondary,
+.admin-layout-root .admin-search-input,
+.admin-layout-root .admin-select-input,
+.admin-layout-root .admin-date-input,
+.admin-layout-root .admin-multiselect-btn {
+  min-height: 40px;
+}
+
+/* Landscape Phones: height under 500px, sticky bars <= 25% screen height */
+@media (max-height: 500px) and (orientation: landscape) {
+  .app-bottom-bar,
+  .sticky-bottom-action-bar,
+  .admin-sticky-save-bar,
+  .rider-duty-switch {
+    max-height: 25dvh !important;
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
+  }
 }
 
 /* Prototype Container & Responsive Frame */
@@ -212,6 +284,34 @@ body * {
     border-radius: 0;
     box-shadow: none;
     border: none;
+  }
+}
+
+@media (min-width: 640px) {
+  .prototype-viewport-wrapper {
+    padding: 0;
+    background-color: var(--color-bg);
+    min-height: 100dvh;
+    width: 100%;
+  }
+  .mobile-device-shell {
+    max-width: 100%;
+    height: auto;
+    min-height: 100dvh;
+    border-radius: 0;
+    box-shadow: none;
+    border: none;
+    overflow: visible;
+    background-color: var(--color-bg);
+  }
+}
+
+@media (min-width: 768px) {
+  .demo-toolbar {
+    display: none !important;
+  }
+  .device-status-bar {
+    display: none !important;
   }
 }
 
@@ -2146,6 +2246,30 @@ body * {
   border-radius: var(--radius-pill);
   align-self: center;
   margin-bottom: 4px;
+}
+
+@media (min-width: 768px) {
+  .modal-overlay {
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .modal-sheet {
+    width: 100%;
+    max-width: 480px;
+    border-radius: 12px;
+    padding: 24px;
+    margin: auto;
+    animation: fadeInDialog 0.2s ease-out;
+  }
+  .sheet-handle {
+    display: none;
+  }
+}
+
+@keyframes fadeInDialog {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
 }
 
 .sheet-title {
