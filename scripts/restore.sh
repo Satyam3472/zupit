@@ -50,7 +50,7 @@ echo "⚠️  CRITICAL CONFIRMATION REQUIRED"
 echo "You are about to OVERWRITE the active production database (${PROD_DB})!"
 echo "This will replace all live orders, customer sessions, and settings."
 echo "========================================================================"
-read -r -p "Type 'RESTORE_LIVE_DATABASE' to proceed with production overwrite: " CONFIRM_INPUT
+read -r -p "Type 'RESTORE_LIVE_DATABASE' to proceed with production overwrite: " CONFIRM_INPUT || true
 
 if [ "${CONFIRM_INPUT}" != "RESTORE_LIVE_DATABASE" ]; then
   echo "🚫 [CANCELLED] Restore aborted by user. Live database was not touched."
