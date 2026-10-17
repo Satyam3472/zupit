@@ -95,10 +95,12 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
     role: admin.role,
   });
 
+  const isSecure = process.env.COOKIE_SECURE !== undefined ? process.env.COOKIE_SECURE === 'true' : process.env.NODE_ENV === 'production';
+
   // Set HTTP-only cookie
   res.cookie('admin_token', token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: isSecure,
     sameSite: 'lax',
     maxAge: 8 * 60 * 60 * 1000, // 8 hours in ms
     path: '/',

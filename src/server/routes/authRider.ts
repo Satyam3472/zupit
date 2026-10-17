@@ -230,10 +230,12 @@ router.post('/verify-otp', async (req: Request, res: Response): Promise<void> =>
     name: rider.name,
   });
 
+  const isSecure = process.env.COOKIE_SECURE !== undefined ? process.env.COOKIE_SECURE === 'true' : process.env.NODE_ENV === 'production';
+
   // Set HTTP-only cookie for browser clients
   res.cookie('rider_access_token', accessToken, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: isSecure,
     sameSite: 'lax',
     maxAge: 15 * 60 * 1000, // 15 mins
     path: '/',
@@ -312,9 +314,11 @@ router.post('/refresh-token', async (req: Request, res: Response): Promise<void>
     name: rider.name,
   });
 
+  const isSecure = process.env.COOKIE_SECURE !== undefined ? process.env.COOKIE_SECURE === 'true' : process.env.NODE_ENV === 'production';
+
   res.cookie('rider_access_token', tokens.accessToken, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: isSecure,
     sameSite: 'lax',
     maxAge: 15 * 60 * 1000,
     path: '/',

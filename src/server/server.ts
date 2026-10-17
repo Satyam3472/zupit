@@ -1,9 +1,10 @@
 import * as dotenv from 'dotenv';
 dotenv.config();
 
+import { env } from './env.js';
 import { createApp } from './app.js';
 
-const PORT = parseInt(process.env.PORT || '3002', 10);
+const PORT = env.PORT;
 const app = createApp();
 
 app.listen(PORT, '0.0.0.0', () => {

@@ -13,15 +13,40 @@ import trackRouter from './routes/track.js';
 import adminRouter from './routes/admin.js';
 import { protectAdminPages, protectRiderPages } from './middleware/auth.js';
 import { defaultRateLimiter, InMemoryRateLimiter } from './utils/rateLimit.js';
+import { pool } from './db/index.js';
 
 export function createApp() {
   const app = express();
+
+  // Trust first proxy hop (Docker Compose reverse proxy / Caddy / Nginx)
+  // Ensures req.ip extracts real client IP and req.secure respects X-Forwarded-Proto
+  app.set('trust proxy', 1);
 
   // Core middleware
   app.use(cors({ origin: true, credentials: true }));
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   app.use(cookieParser());
+
+  // Health check endpoint: checks database connectivity and returns 503 when down
+  app.get(['/api/v1/health', '/health'], async (_req: Request, res: Response) => {
+    try {
+      await pool.query('SELECT 1');
+      res.status(200).json({
+        status: 'healthy',
+        database: 'connected',
+        timestamp: new Date().toISOString(),
+      });
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      res.status(503).json({
+        status: 'unhealthy',
+        database: 'disconnected',
+        error: errorMsg,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  });
 
   // CSRF protection: Origin check on cookie-authenticated mutating routes
   app.use((req: Request, res: Response, next) => {
