@@ -1,0 +1,121 @@
+========================================================================
+🔍 ZUPIT VPS PREFLIGHT DIAGNOSTIC REPORT
+Host: 82.29.165.59 | Timestamp: 2026-10-17 09:10:07 UTC
+========================================================================
+
+--- 1. OPERATING SYSTEM & HARDWARE ---
+OS: Ubuntu 24.04.5 LTS
+Kernel: 6.8.0-147-generic
+CPU Cores: 2
+CPU Model: AMD EPYC 9354P 32-Core Processor
+
+--- 2. MEMORY & SWAP (free -m) ---
+               total        used        free      shared  buff/cache   available
+Mem:            7940        1181        5470         253        1808        6759
+Swap:              0           0           0
+
+Swap Details:
+
+--- 3. DISK SPACE (df -h) ---
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/sda1        96G  5.1G   91G   6% /
+/dev/sda16      881M  117M  703M  15% /boot
+/dev/sda15      105M  6.2M   99M   6% /boot/efi
+overlay          96G  5.1G   91G   6% /var/lib/docker/rootfs/overlayfs/822a18674b137016d1c4f2e315a9b09c01e184d8f2a82b01c5f4f16c28510b8e
+overlay          96G  5.1G   91G   6% /var/lib/docker/rootfs/overlayfs/fec35ff10d5f9be3078d721d5121c75a30e89a61cf7ee8e7d724ca5595209e8d
+overlay          96G  5.1G   91G   6% /var/lib/docker/rootfs/overlayfs/f82c424ac6cf6f8c1b919e2324a54cacb67ab8f2334ee1403530d9d63a626ae2
+overlay          96G  5.1G   91G   6% /var/lib/docker/rootfs/overlayfs/348ec0f10dc704e934bd94ee5dc7202c22656cc0b8b1692e626bfda67276e54f
+overlay          96G  5.1G   91G   6% /var/lib/docker/rootfs/overlayfs/2e5e078077f33526e571a27c8d28105fe829c48177f097e0d7576951ee72f465
+overlay          96G  5.1G   91G   6% /var/lib/docker/rootfs/overlayfs/da06f53303649db3217c4ce8f1c9730fc77a60b7389b0e97fd34a2459b5f1996
+overlay          96G  5.1G   91G   6% /var/lib/docker/rootfs/overlayfs/8d62b071721a8da83669ede12cc066950bf23725bfc926316806a5f87ccb84e0
+
+--- 4. DOCKER & DOCKER COMPOSE VERSIONS ---
+Docker binary: /usr/bin/docker
+Docker version 29.8.1, build 4a63305
+Docker Compose version v5.5.1
+
+--- 5. RUNNING DOCKER CONTAINERS (if any) ---
+Running Containers count: 7
+CONTAINER ID   NAMES                IMAGE                       STATUS                  PORTS
+8d62b071721a   coolify-sentinel     coollabsio/sentinel:1.0.2   Up 13 hours (healthy)   
+da06f5330364   coolify              coollabsio/coolify:4.4.6    Up 13 hours (healthy)   8000/tcp, 8443/tcp, 0.0.0.0:6001-6002->6001-6002/tcp, [::]:6001-6002->6001-6002/tcp, 9000/tcp, 0.0.0.0:8000->8080/tcp, [::]:8000->8080/tcp
+2e5e078077f3   coolify-db           postgres:15-alpine          Up 13 hours (healthy)   5432/tcp
+822a18674b13   coolify-redis        redis:7-alpine              Up 13 hours (healthy)   6379/tcp
+fec35ff10d5f   brickflow_app        brickflow-app               Up 13 hours             0.0.0.0:3000->3000/tcp, [::]:3000->3000/tcp
+348ec0f10dc7   brickflow_postgres   postgres:16-alpine          Up 13 hours (healthy)   5432/tcp
+f82c424ac6cf   coolify-proxy        traefik:v3.6                Up 13 hours (healthy)   0.0.0.0:80->80/tcp, [::]:80->80/tcp, 0.0.0.0:443->443/tcp, [::]:443->443/tcp, 0.0.0.0:8080->8080/tcp, [::]:8080->8080/tcp, 0.0.0.0:443->443/udp, [::]:443->443/udp
+
+Container Networks & Volumes Summary:
+  • Container [coolify-sentinel]: Networks=[coolify ] | Mounts=[/data/coolify/sentinel:/app/db /var/run/docker.sock:/var/run/docker.sock ]
+  • Container [coolify]: Networks=[coolify ] | Mounts=[/data/coolify/source/.env:/var/www/html/.env /data/coolify/applications:/var/www/html/storage/app/applications /data/coolify/backups:/var/www/html/storage/app/backups /data/coolify/databases:/var/www/html/storage/app/databases /data/coolify/images:/var/www/html/storage/app/images /data/coolify/services:/var/www/html/storage/app/services /data/coolify/ssh:/var/www/html/storage/app/ssh ]
+  • Container [coolify-db]: Networks=[coolify ] | Mounts=[/var/lib/docker/volumes/coolify-db/_data:/var/lib/postgresql/data ]
+  • Container [coolify-redis]: Networks=[coolify ] | Mounts=[/var/lib/docker/volumes/coolify-redis/_data:/data ]
+  • Container [brickflow_app]: Networks=[brickflow_brickflow_network ] | Mounts=[]
+  • Container [brickflow_postgres]: Networks=[brickflow_brickflow_network ] | Mounts=[/var/www/brickflow/src/lib/db/schema-postgres.sql:/docker-entrypoint-initdb.d/01-init.sql /var/lib/docker/volumes/brickflow_postgres_data/_data:/var/lib/postgresql/data ]
+  • Container [coolify-proxy]: Networks=[coolify ] | Mounts=[/data/coolify/proxy:/traefik /var/run/docker.sock:/var/run/docker.sock ]
+
+--- 6. ALL LISTENING PORTS & PROCESSES (ss -tlnp) ---
+State  Recv-Q Send-Q Local Address:Port  Peer Address:PortProcess                                                
+LISTEN 0      4096         0.0.0.0:8000       0.0.0.0:*    users:(("docker-proxy",pid=1782,fd=8))                
+LISTEN 0      4096         0.0.0.0:8080       0.0.0.0:*    users:(("docker-proxy",pid=1662,fd=8))                
+LISTEN 0      4096   127.0.0.53%lo:53         0.0.0.0:*    users:(("systemd-resolve",pid=519,fd=15))             
+LISTEN 0      4096         0.0.0.0:3000       0.0.0.0:*    users:(("docker-proxy",pid=1515,fd=8))                
+LISTEN 0      4096         0.0.0.0:6001       0.0.0.0:*    users:(("docker-proxy",pid=1710,fd=8))                
+LISTEN 0      4096         0.0.0.0:6002       0.0.0.0:*    users:(("docker-proxy",pid=1744,fd=8))                
+LISTEN 0      4096      127.0.0.54:53         0.0.0.0:*    users:(("systemd-resolve",pid=519,fd=17))             
+LISTEN 0      4096       127.0.0.1:65529      0.0.0.0:*    users:(("monarx-agent",pid=708,fd=9))                 
+LISTEN 0      4096         0.0.0.0:443        0.0.0.0:*    users:(("docker-proxy",pid=1611,fd=8))                
+LISTEN 0      4096         0.0.0.0:22         0.0.0.0:*    users:(("sshd",pid=718,fd=3),("systemd",pid=1,fd=169))
+LISTEN 0      4096         0.0.0.0:80         0.0.0.0:*    users:(("docker-proxy",pid=1561,fd=8))                
+LISTEN 0      4096            [::]:8000          [::]:*    users:(("docker-proxy",pid=1789,fd=8))                
+LISTEN 0      4096            [::]:8080          [::]:*    users:(("docker-proxy",pid=1668,fd=8))                
+LISTEN 0      4096            [::]:3000          [::]:*    users:(("docker-proxy",pid=1523,fd=8))                
+LISTEN 0      4096            [::]:6001          [::]:*    users:(("docker-proxy",pid=1718,fd=8))                
+LISTEN 0      4096            [::]:6002          [::]:*    users:(("docker-proxy",pid=1749,fd=8))                
+LISTEN 0      4096            [::]:443           [::]:*    users:(("docker-proxy",pid=1616,fd=8))                
+LISTEN 0      4096            [::]:22            [::]:*    users:(("sshd",pid=718,fd=4),("systemd",pid=1,fd=170))
+LISTEN 0      4096            [::]:80            [::]:*    users:(("docker-proxy",pid=1568,fd=8))                
+
+--- 7. PORTS 80 & 443 / REVERSE PROXIES (nginx, caddy, apache, traefik) ---
+Processes bound to :80 or :443:
+LISTEN 0      4096         0.0.0.0:443        0.0.0.0:*    users:(("docker-proxy",pid=1611,fd=8))                
+LISTEN 0      4096         0.0.0.0:80         0.0.0.0:*    users:(("docker-proxy",pid=1561,fd=8))                
+LISTEN 0      4096            [::]:443           [::]:*    users:(("docker-proxy",pid=1616,fd=8))                
+LISTEN 0      4096            [::]:80            [::]:*    users:(("docker-proxy",pid=1568,fd=8))                
+
+Reverse Proxy Services Status:
+
+--- 8. FIREWALL (UFW) STATUS & RULES ---
+Status: inactive
+
+--- 9. EXISTING APP ON :3000 INVESTIGATION ---
+Listening Socket on 3000:
+State  Recv-Q Send-Q Local Address:Port Peer Address:PortProcess                                
+LISTEN 0      4096         0.0.0.0:3000      0.0.0.0:*    users:(("docker-proxy",pid=1515,fd=8))
+LISTEN 0      4096            [::]:3000         [::]:*    users:(("docker-proxy",pid=1523,fd=8))
+
+Process Details (PID: 1515):
+    PID    PPID USER     %CPU %MEM   RSS    VSZ     ELAPSED                  STARTED CMD
+   1515     851 root      0.0  0.0  5240 1673172   12:49:39 Fri Oct 16 20:20:28 2026 /usr/bin/docker-proxy -proto tcp -host-ip 0.0.0.0 -host-port 3000 -container-ip 172.16.2.3 -container-port 3000 -use-listen-fd
+
+Process Manager / Supervision Type:
+  • Type: DOCKER CONTAINER (bridged by docker-proxy)
+    Docker Container: brickflow_app (brickflow-app)
+
+Memory usage for PID 1515:
+  • RSS Memory: 5 MB (Process: /usr/bin/docker-proxy)
+
+--- 10. BASELINE MEASUREMENT OF EXISTING APP (http://127.0.0.1:3000/) ---
+HTTP Status Code: HTTP/1.1 307 Temporary Redirect
+Response Body SHA256 Hash: 24dbc7c0f38339cc7ed6144118672f2a22031ba4ecd85e5587db0d3c827602f9
+Response Body Size: 7368 bytes
+Response Server Header: Server header: none
+Sample Body (first 3 lines):
+  | <!DOCTYPE html><html id="__next_error__"><head><meta charSet="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="preload" as="script" fetchPriority="low" href="/_next/static/chunks/3mc6dra1m0098.js"/><script src="/_next/static/chunks/2i51e627rllld.js" async=""></script><script src="/_next/static/chunks/27t_qfc-3_lzs.js" async=""></script><script src="/_next/static/chunks/3ertolydtjaa3.js" async=""></script><script src="/_next/static/chunks/turbopack-39qvnfg_r1yc6.js" async=""></script><title>BrickFlow Kiln OS - सरल भट्ठा प्रबंधन एवं मुंशी खाता प्रणाली</title><meta name="description" content="Enterprise operating system for the Indian Brick Kiln Industry. Real-time production, accounts, sales, and multi-kiln management."/><link rel="manifest" href="/site.webmanifest"/><link rel="icon" href="/favicon.ico?favicon.22zwso2zo6-qd.ico" sizes="256x256" type="image/x-icon"/><link rel="icon" href="/favicon.svg" type="image/svg+xml"/><link rel="icon" href="/favicon.ico" sizes="any"/><link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" type="image/png"/><script src="/_next/static/chunks/0cz1d0mv5g_q7.js" noModule=""></script></head><body><div hidden=""><!--$--><!--/$--></div><script src="/_next/static/chunks/3mc6dra1m0098.js" id="_R_" async=""></script><script>(self.__next_f=self.__next_f||[]).push([0])</script><script>self.__next_f.push([1,"1:\"$Sreact.fragment\"\n2:I[39756,[\"/_next/static/chunks/3fntmmi971322.js\"],\"default\"]\n3:I[37457,[\"/_next/static/chunks/3fntmmi971322.js\"],\"default\"]\n5:I[97367,[\"/_next/static/chunks/3fntmmi971322.js\"],\"OutletBoundary\"]\n6:\"$Sreact.suspense\"\n8:I[97367,[\"/_next/static/chunks/3fntmmi971322.js\"],\"ViewportBoundary\"]\na:I[97367,[\"/_next/static/chunks/3fntmmi971322.js\"],\"MetadataBoundary\"]\nc:I[68027,[\"/_next/static/chunks/3fntmmi971322.js\"],\"default\",1]\n:HL[\"/_next/static/chunks/2d3wmfc7jngg7.css\",\"style\"]\n:HL[\"https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800\u0026family=Noto+Sans+Devanagari:wght@400;500;600;700\u0026display=swap\",\"style\"]\n:HL[\"https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200\",\"style\"]\n0:{\"P\":null,\"c\":[\"\",\"\"],\"q\":\"\",\"i\":false,\"f\":[[[\"\",{\"children\":[\"__PAGE__\",{},\"$undefined\",\"$undefined\",4096]},\"$undefined\",\"$undefined\",4112],[[\"$\",\"$1\",\"c\",{\"children\":[[[\"$\",\"link\",\"0\",{\"rel\":\"stylesheet\",\"href\":\"/_next/static/chunks/2d3wmfc7jngg7.css\",\"precedence\":\"next\",\"crossOrigin\":\"$undefined\",\"nonce\":\"$undefined\"}],[\"$\",\"script\",\"script-0\",{\"src\":\"/_next/static/chunks/3fntmmi971322.js\",\"async\":true,\"nonce\":\"$undefined\"}]],[\"$\",\"html\",null,{\"lang\":\"hi\",\"className\":\"h-full antialiased\",\"children\":[[\"$\",\"head\",null,{\"children\":[[\"$\",\"link\",null,{\"rel\":\"preconnect\",\"href\":\"https://fonts.googleapis.com\"}],[\"$\",\"link\",null,{\"rel\":\"preconnect\",\"href\":\"https://fonts.gstatic.com\",\"crossOrigin\":\"anonymous\"}],[\"$\",\"link\",null,{\"href\":\"https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800\u0026family=Noto+Sans+Devanagari:wght@400;500;600;700\u0026display=swap\",\"rel\":\"stylesheet\"}],[\"$\",\"link\",null,{\"href\":\"https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200\",\"rel\":\"stylesheet\"}]]}],[\"$\",\"body\",null,{\"className\":\"min-h-full flex flex-col bg-[#f8f9ff] text-[#131c26]\",\"children\":[\"$\",\"$L2\",null,{\"parallelRouterKey\":\"children\",\"error\":\"$undefined\",\"errorStyles\":\"$undefined\",\"errorScripts\":\"$undefined\",\"template\":[\"$\",\"$L3\",null,{}],\"templateStyles\":\"$undefined\",\"templateScripts\":\"$undefined\",\"notFound\":[[[\"$\",\"title\",null,{\"children\":\"404: This page could not be found.\"}],[\"$\",\"div\",null,{\"style\":{\"fontFamily\":\"system-ui,\\\"Segoe UI\\\",Roboto,Helvetica,Arial,sans-serif,\\\"Apple Color Emoji\\\",\\\"Segoe UI Emoji\\\"\",\"height\":\"100vh\",\"textAlign\":\"center\",\"display\":\"flex\",\"flexDirection\":\"column\",\"alignItems\":\"center\",\"justifyContent\":\"center\"},\"children\":[\"$\",\"div\",null,{\"children\":[[\"$\",\"style\",null,{\"dangerouslySetInnerHTML\":{\"__html\":\"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}\"}}],[\"$\",\"h1\",null,{\"className\":\"next-error-h1\",\"style\":{\"display\":\"inline-block\",\"margin\":\"0 20px 0 0\",\"padding\":\"0 23px 0 0\",\"fontSize\":24,\"fontWeight\":500,\"verticalAlign\":\"top\",\"lineHeight\":\"49px\"},\"children\":404}],[\"$\",\"div\",null,{\"style\":{\"display\":\"inline-block\"},\"children\":[\"$\",\"h2\",null,{\"style\":{\"fontSize\":14,\"fontWeight\":400,\"lineHeight\":\"49px\",\"margin\":0},\"children\":\"This page could not be found.\"}]}]]}]}]],[]],\"forbidden\":\"$undefined\",\"unauthorized\":\"$undefined\"}]}]]}]]}],{\"children\":[[\"$\",\"$1\",\"c\",{\"children\":[\"$L4\",null,[\"$\",\"$L5\",null,{\"children\":[\"$\",\"$6\",null,{\"name\":\"Next.MetadataOutlet\",\"children\":\"$@7\"}]}]]}],{},null,false,null]},null,false,null],[\"$\",\"$1\",\"h\",{\"children\":[null,[\"$\",\"$L8\",null,{\"children\":\"$L9\"}],[\"$\",\"div\",null,{\"hidden\":true,\"children\":[\"$\",\"$La\",null,{\"children\":[\"$\",\"$6\",null,{\"name\":\"Next.Metadata\",\"children\":\"$Lb\"}]}]}],null]}],false]],\"m\":\"$undefined\",\"G\":[\"$c\",[[\"$\",\"link\",\"0\",{\"rel\":\"stylesheet\",\"href\":\"/_next/static/chunks/2d3wmfc7jngg7.css\",\"precedence\":\"next\",\"crossOrigin\":\"$undefined\",\"nonce\":\"$undefined\"}]]],\"S\":false,\"h\":null,\"r\":\"$undefined\",\"s\":\"$undefined\",\"a\":\"$undefined\",\"l\":\"$undefined\",\"p\":\"$undefined\",\"d\":\"$undefined\",\"b\":\"w2CWY7rRsklmPSiv2waE4\"}\n4:E{\"digest\":\"NEXT_REDIRECT;replace;/login;307;\"}\n9:[[\"$\",\"meta\",\"0\",{\"charSet\":\"utf-8\"}],[\"$\",\"meta\",\"1\",{\"name\":\"viewport\",\"content\":\"width=device-width, initial-scale=1\"}]]\nd:I[27201,[\"/_next/static/chunks/3fntmmi971322.js\"],\"IconMark\"]\n7:null\nb:[[\"$\",\"title\",\"0\",{\"children\":\"BrickFlow Kiln OS - सरल भट्ठा प्रबंधन एवं मुंशी खाता प्रणाली\"}],[\"$\",\"meta\",\"1\",{\"name\":\"description\",\"content\":\"Enterprise operating system for the Indian Brick Kiln Industry. Real-time production, accounts, sales, and multi-kiln management.\"}],[\"$\",\"link\",\"2\",{\"rel\":\"manifest\",\"href\":\"/site.webmanifest\",\"crossOrigin\":\"$undefined\"}],[\"$\",\"link\",\"3\",{\"rel\":\"icon\",\"href\":\"/favicon.ico?favicon.22zwso2zo6-qd.ico\",\"sizes\":\"256x256\",\"type\":\"image/x-icon\"}],[\"$\",\"link\",\"4\",{\"rel\":\"icon\",\"href\":\"/favicon.svg\",\"type\":\"image/svg+xml\"}],[\"$\",\"link\",\"5\",{\"rel\":\"icon\",\"href\":\"/favicon.ico\",\"sizes\":\"any\"}],[\"$\",\"link\",\"6\",{\"rel\":\"apple-touch-icon\",\"href\":\"/apple-touch-icon.png\",\"sizes\":\"180x180\",\"type\":\"image/png\"}],[\"$\",\"$Ld\",\"7\",{}]]\n"])</script></body></html>
+--- 11. DOMAIN RESOLUTION CHECK ---
+No domain provided to preflight check (defaulting to Mode A check).
+
+========================================================================
+✅ PREFLIGHT COMPLETE. Baseline saved to deploy-baseline.txt.
+========================================================================
+StartedAt: 2026-10-16T20:20:27.441417092Z
