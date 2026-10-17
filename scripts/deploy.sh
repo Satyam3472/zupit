@@ -52,8 +52,8 @@ rollback_on_failure() {
 trap rollback_on_failure EXIT
 
 # 0. Check or build Docker images with low priority & memory protection
-if ! docker image inspect "zupit-app:${TARGET_SHA}" >/dev/null 2>&1; then
-  echo "[0/4] Image zupit-app:${TARGET_SHA} not present. Initiating safe build on VPS..."
+if ! docker image inspect "zupit-app:${TARGET_SHA}" >/dev/null 2>&1 || ! docker image inspect "zupit-minio:RELEASE.2025-09-07" >/dev/null 2>&1 || ! docker image inspect "zupit-mc:RELEASE.2025-08-13" >/dev/null 2>&1; then
+  echo "[0/4] Stack images not fully present. Initiating safe build on VPS..."
   AVAIL_MEM_MB=$(free -m | awk '/^Mem:/{print $7}')
   AVAIL_SWAP_MB=$(free -m | awk '/^Swap:/{print $4}')
   TOTAL_AVAIL_MB=$((AVAIL_MEM_MB + AVAIL_SWAP_MB))
