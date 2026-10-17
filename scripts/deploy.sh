@@ -29,9 +29,13 @@ echo "========================================================================"
 
 export GIT_SHA="${TARGET_SHA}"
 
+MEM_WATCH_PID=""
 # Rollback trap
 rollback_on_failure() {
   local exit_code=$?
+  if [ -n "${MEM_WATCH_PID}" ]; then
+    kill "${MEM_WATCH_PID}" 2>/dev/null || true
+  fi
   if [ $exit_code -ne 0 ]; then
     echo "❌ [DEPLOYMENT FAILED] Exit code ${exit_code}. Initiating automatic rollback to ${PREV_SHA}..."
     if [ -f "./scripts/rollback.sh" ]; then
@@ -41,6 +45,42 @@ rollback_on_failure() {
   exit $exit_code
 }
 trap rollback_on_failure EXIT
+
+# 0. Check or build Docker images with low priority & memory protection
+if ! docker image inspect "zupit-app:${TARGET_SHA}" >/dev/null 2>&1; then
+  echo "[0/4] Image zupit-app:${TARGET_SHA} not present. Initiating safe build on VPS..."
+  AVAIL_MEM_MB=$(free -m | awk '/^Mem:/{print $7}')
+  AVAIL_SWAP_MB=$(free -m | awk '/^Swap:/{print $4}')
+  TOTAL_AVAIL_MB=$((AVAIL_MEM_MB + AVAIL_SWAP_MB))
+  if [ "${TOTAL_AVAIL_MB}" -lt 2500 ]; then
+    echo "❌ [ERROR] Available RAM + Swap (${TOTAL_AVAIL_MB} MB) is below 2.5 GB threshold." >&2
+    exit 1
+  fi
+  echo "Memory safety check passed (${TOTAL_AVAIL_MB} MB available). Building with low priority..."
+
+  # Memory guard loop
+  (
+    while true; do
+      CUR_AVAIL=$(free -m | awk '/^Mem:/{print $7}')
+      if [ -n "${CUR_AVAIL}" ] && [ "${CUR_AVAIL}" -lt 300 ]; then
+        echo "🚨 [OUT OF MEMORY RISK] Available RAM dropped below 300MB (${CUR_AVAIL}MB)! Aborting build to protect existing app..." >&2
+        pkill -f "docker compose.*build" 2>/dev/null || true
+        exit 1
+      fi
+      sleep 2
+    done
+  ) &
+  MEM_WATCH_PID=$!
+
+  IONICE_PREFIX=""
+  if command -v ionice >/dev/null 2>&1; then
+    IONICE_PREFIX="ionice -c 3"
+  fi
+  nice -n 19 ${IONICE_PREFIX} docker compose -f "${COMPOSE_FILE}" build
+  kill "${MEM_WATCH_PID}" 2>/dev/null || true
+  wait "${MEM_WATCH_PID}" 2>/dev/null || true
+  MEM_WATCH_PID=""
+fi
 
 # 1. Start database and wait for healthy
 echo "[1/4] Ensuring PostgreSQL is healthy..."

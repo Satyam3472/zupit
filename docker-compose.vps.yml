@@ -56,6 +56,9 @@ services:
   # 2. Database Migrations (One-off Drizzle runner)
   # ----------------------------------------------------------------------------
   migrate:
+    build:
+      context: .
+      target: migrator
     image: zupit-migrator:${GIT_SHA:-latest}
     container_name: zupit_migrate
     restart: "no"
@@ -81,6 +84,11 @@ services:
   # 3. Zupit Web Application
   # ----------------------------------------------------------------------------
   app:
+    build:
+      context: .
+      target: runner
+      args:
+        NEXT_PUBLIC_APP_URL: ${PUBLIC_URL:-http://82.29.165.59:3100}
     image: zupit-app:${GIT_SHA:-latest}
     container_name: zupit_app
     restart: unless-stopped
@@ -231,6 +239,8 @@ services:
   # 7. Nightly Automated Database Backup (02:30 IST)
   # ----------------------------------------------------------------------------
   backup:
+    build:
+      context: ./docker/backup
     image: zupit-backup:${GIT_SHA:-latest}
     container_name: zupit_backup
     restart: unless-stopped
