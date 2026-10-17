@@ -20,7 +20,7 @@ fi
 
 echo "[INFO] Checking if an admin already exists in the database..."
 
-EXISTING_ADMINS=$(docker compose -f "${COMPOSE_FILE}" exec -T db psql -U zupit_admin -d zupit_prod -tAc "SELECT count(*) FROM admins;" 2>/dev/null || echo "0")
+EXISTING_ADMINS=$(docker compose --env-file "${ENV_FILE}" -f "${COMPOSE_FILE}" exec -T db psql -U zupit_admin -d zupit_prod -tAc "SELECT count(*) FROM admins;" 2>/dev/null || echo "0")
 EXISTING_ADMINS=$(echo "${EXISTING_ADMINS}" | tr -d '[:space:]')
 
 if [ "${EXISTING_ADMINS}" -gt 0 ]; then
@@ -30,7 +30,7 @@ if [ "${EXISTING_ADMINS}" -gt 0 ]; then
 fi
 
 echo "[INFO] No existing admin found. Running initial database seed..."
-docker compose -f "${COMPOSE_FILE}" run --rm migrate pnpm db:seed
+docker compose --env-file "${ENV_FILE}" -f "${COMPOSE_FILE}" run --rm migrate pnpm db:seed
 
 echo "✅ [SUCCESS] Database successfully seeded with settings, owner admin, and serviceable areas."
 

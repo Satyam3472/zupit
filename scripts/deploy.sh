@@ -10,12 +10,17 @@ set -euo pipefail
 COMPOSE_FILE="${1:-/opt/zupit/docker-compose.vps.yml}"
 TARGET_SHA="${2:-$(git rev-parse --short HEAD 2>/dev/null || echo 'latest')}"
 STATE_DIR="/opt/zupit"
-
-if [ ! -f "${COMPOSE_FILE}" ]; then
-  COMPOSE_FILE="./docker-compose.vps.yml"
+ENV_FILE="${STATE_DIR}/.env.production"
+if [ ! -f "${ENV_FILE}" ]; then
+  ENV_FILE="./.env.production"
 fi
 
-mkdir -p "${STATE_DIR}"
+# Ensure .env symlinks to .env.production for seamless Compose interpolation
+if [ -f "${ENV_FILE}" ] && [ ! -f "${STATE_DIR}/.env" ]; then
+  ln -sf "${ENV_FILE}" "${STATE_DIR}/.env" 2>/dev/null || true
+fi
+
+COMPOSE_CMD="docker compose --env-file ${ENV_FILE} -f ${COMPOSE_FILE}"
 PREV_SHA="latest"
 if [ -f "${STATE_DIR}/.current_sha" ]; then
   PREV_SHA=$(cat "${STATE_DIR}/.current_sha")
@@ -76,7 +81,7 @@ if ! docker image inspect "zupit-app:${TARGET_SHA}" >/dev/null 2>&1; then
   if command -v ionice >/dev/null 2>&1; then
     IONICE_PREFIX="ionice -c 3"
   fi
-  nice -n 19 ${IONICE_PREFIX} docker compose -f "${COMPOSE_FILE}" build
+  nice -n 19 ${IONICE_PREFIX} ${COMPOSE_CMD} build
   kill "${MEM_WATCH_PID}" 2>/dev/null || true
   wait "${MEM_WATCH_PID}" 2>/dev/null || true
   MEM_WATCH_PID=""
@@ -84,7 +89,7 @@ fi
 
 # 1. Start database and wait for healthy
 echo "[1/4] Ensuring PostgreSQL is healthy..."
-docker compose -f "${COMPOSE_FILE}" up -d db
+${COMPOSE_CMD} up -d db
 echo "Waiting for database to report healthy..."
 until [ "$(docker inspect --format='{{.State.Health.Status}}' zupit_db 2>/dev/null || echo '')" = "healthy" ]; do
   sleep 2
@@ -93,11 +98,11 @@ echo "✅ Database is healthy."
 
 # 2. Run migrations
 echo "[2/4] Executing forward-compatible Drizzle database migrations..."
-docker compose -f "${COMPOSE_FILE}" run --rm migrate
+${COMPOSE_CMD} run --rm migrate
 
 # 3. Bring up full stack
 echo "[3/4] Launching Zupit production services..."
-docker compose -f "${COMPOSE_FILE}" up -d minio minio-init edge app backup
+${COMPOSE_CMD} up -d minio minio-init edge app backup
 
 # Allow edge and app 5 seconds to bind
 sleep 5
